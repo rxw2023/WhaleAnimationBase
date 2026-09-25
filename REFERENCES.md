@@ -214,7 +214,7 @@ ffmpeg -hide_banner -i ref.mp4 -vf "select='gt(scene,0.30)',showinfo" -an -f nul
 
 **The Chainsmokers & Coldplay《Something Just Like This》**（外部提供）
 
-### 6.1 实测数据（由本项目的 `analyze-bgm.mjs` 得出）
+### 6.1 实测数据（由本项目的 `analyze_bgm.mjs` 得出）
 
 | 项 | 值 |
 |---|---|
@@ -237,9 +237,9 @@ ffmpeg -y -ss 20.5318 -i assets/bgm.mp3 -t 45 \
 
 切点位于小节线上，因此片内 `t=0` 即为重拍，`G.T.off = 0`。端到端复核误差约 **7 ms**。
 
-> **版权声明**：该曲目为商业发行作品。包含该曲目的渲染成片（`out/whale-odyssey.mp4`）
+> **版权声明**：该曲目为商业发行作品。包含该曲目的渲染成片（`out/video.mp4`）
 > 仅供个人学习与内部预览，不得公开分发或用于商业用途。正式发布前须替换为自有或已获授权的音乐；
-> 换曲流程见 `HANDBOOK.md` 第 6.1 节。
+> 换曲流程见 `ANIMATION_GUIDE.md` 第 6.1 节。
 
 ---
 
@@ -290,7 +290,7 @@ ffmpeg -y -ss 20.5318 -i assets/bgm.mp3 -t 45 \
 ## 10 · 引用格式
 
 ```text
-动画 / 代码：whale-odyssey —— 基于以下参考独立实现：
+动画 / 代码：WhaleAnimationBase —— 基于以下参考独立实现：
   · 视觉语言：参考片（手绘科普动画，32 s / 24 fps / 1920×1080）
   · 工程架构：JohnHeibel/PDoomVideo（每帧纯函数 + 无头 Chrome 逐帧 + ffmpeg）
   · 材质概念：acamposuribe/p5.brush（笔刷 / 排线 / 水彩的能力清单；本项目未使用其代码）

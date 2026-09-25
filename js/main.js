@@ -150,7 +150,7 @@
     rec.onstop = function () {
       const blob = new Blob(chunks, { type: mt || 'video/webm' });
       const url = URL.createObjectURL(blob);
-      dl(url, 'whale-odyssey.webm');
+      dl(url, 'WhaleAnimationBase.webm');
       setTimeout(() => URL.revokeObjectURL(url), 5000);
       G.Audio.disconnectCapture();
       S.recDest = null; S.rec = null;
@@ -233,7 +233,7 @@
     $('png').onclick = exportFrame;
     $('sheet').onclick = toggleSheet;
     $('rec').onclick = () => { if (S.rec) stopRec(); else startRec(); };
-    $('wav').onclick = () => { if (!G.Audio.buffer()) { toast('还没有可导出的音轨'); return; } G.Audio.exportWav('whale-odyssey-demo-' + G.T.bpm + 'bpm.wav'); toast('已导出 WAV'); };
+    $('wav').onclick = () => { if (!G.Audio.buffer()) { toast('还没有可导出的音轨'); return; } G.Audio.exportWav('WhaleAnimationBase-demo-' + G.T.bpm + 'bpm.wav'); toast('已导出 WAV'); };
 
     window.addEventListener('keydown', e => {
       if (e.target && /INPUT|TEXTAREA/.test(e.target.tagName)) return;

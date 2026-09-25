@@ -1,12 +1,13 @@
 ![hero](docs/hero.jpg)
 
-# 小鲸鱼 · 一直在游
+# Whale Animation Base
+### 小鲸鱼 · 一直在游 —— *The Long Swim*
 
-> **45 秒全程序化动画短片。** 一只小鲸鱼从海里出发，穿过神经元、棱镜、双缝干涉、
-> 向日葵、太阳系、螺旋星系、黑洞与时空，最后回到海里，继续游。
+> **一套「手绘动画」起点包**：可复用的形态混合引擎 + 45 秒程序化成片 + 配乐分析器 + 复用手册。
+> 一只小鲸鱼从海里出发，穿过神经元、棱镜、双缝干涉、向日葵、太阳系、螺旋星系、黑洞与时空，
+> 最后回到海里，继续游。
 >
-> **零运行时依赖**：纯 Canvas 2D + Web Audio，双击 `index.html` 就能看；
-> 出片也不需要 `npm install`。
+> **零运行时依赖**：纯 Canvas 2D + Web Audio，双击 `index.html` 即可播放；离线出片也不需要 `npm install`。
 
 ![license](https://img.shields.io/badge/license-MIT%20(code)-blue)
 ![runtime deps](https://img.shields.io/badge/runtime%20deps-0-brightgreen)
@@ -77,7 +78,7 @@ pos(i, t) = form[形态A](i, t) × (1 − k) + form[形态B](i, t) × k
 ## 快速开始
 
 ```bash
-git clone <this-repo> && cd whale-odyssey
+git clone <this-repo> && cd WhaleAnimationBase
 # 不需要 install。直接：
 双击 index.html
 ```
@@ -119,7 +120,7 @@ git clone <this-repo> && cd whale-odyssey
 成片用的是 **The Chainsmokers & Coldplay《Something Just Like This》**。BPM 不是猜的，是实测的：
 
 ```bash
-node analyze-bgm.mjs assets/bgm.mp3 --target=45
+node analyze_bgm.mjs assets/bgm.mp3 --target=45
 ```
 
 | 项 | 实测值 |
@@ -133,7 +134,7 @@ node analyze-bgm.mjs assets/bgm.mp3 --target=45
 切点在小节线上 ⇒ 片内 `t=0` 就是重拍 ⇒ 整片节拍网格与歌曲重合（复核误差约 **7 ms**）。
 
 > ⚠️ **版权**：这首歌是商业发行作品。仓库里**不包含**它（见 `.gitignore`），
-> 请自行准备音乐文件。发布的成片请换成自有或已授权音乐——换歌流程见 [HANDBOOK.md](HANDBOOK.md) §6.1。
+> 请自行准备音乐文件。发布的成片请换成自有或已授权音乐——换歌流程见 [ANIMATION_GUIDE.md](ANIMATION_GUIDE.md) §6.1。
 
 ---
 
@@ -146,7 +147,7 @@ node render.mjs --sheet=0,6,12,20,26 --cols=4 --w=430 --out=out/sheet.jpg   # �
 # 整片（推荐）
 node render.mjs --dumpdemo=out/demo.wav             # 没音乐时先导出内置合成音轨
 node render.mjs --frames=0:45 --fps=30 --workers=5 --out=out/frames   # 逐帧，可断点续传
-node render.mjs --encode --fps=30 --audio=assets/bgm-45s.m4a --out=out/whale-odyssey.mp4
+node render.mjs --encode --fps=30 --audio=assets/bgm-45s.m4a --out=out/video.mp4
 
 # 只渲一小段
 node render.mjs --clip=25:32 --fps=30 --audio=assets/bgm-45s.m4a --out=out/clip.mp4
@@ -162,7 +163,7 @@ node render.mjs --clip=25:32 --fps=30 --audio=assets/bgm-45s.m4a --out=out/clip.
 ## 目录结构
 
 ```text
-whale-odyssey/
+WhaleAnimationBase/
 ├── index.html            # 播放器页面（经典 <script> 按顺序加载）
 ├── js/                   # 引擎 + 剧本
 │   ├── core.js           # 内核：数学 / 确定性抖动 / 铅笔排线 / 纸纹 / 相机 / 手写字
@@ -172,7 +173,7 @@ whale-odyssey/
 │   ├── audio.js          # 音频：示范 BGM 离线合成 / 外部 BGM / 节拍器 / 导出 WAV
 │   └── main.js           # 播放器逻辑 + 离线渲染接口
 ├── render.mjs            # 离线渲染器：无头 Chrome 逐帧 → ffmpeg 编码
-├── analyze-bgm.mjs       # 配乐分析器：实测 BPM / 拍点 / 段落结构 / 选段推荐
+├── analyze_bgm.mjs       # 配乐分析器：实测 BPM / 拍点 / 段落结构 / 选段推荐
 ├── docs/                 # README 配图
 │   ├── hero.jpg
 │   ├── morph.jpg
@@ -180,7 +181,7 @@ whale-odyssey/
 ├── assets/               # 用户自备音乐（已被 .gitignore 排除）
 │   └── README.txt
 ├── out/                  # 渲染产物（已被 .gitignore 排除）
-├── HANDBOOK.md           # 复用手册
+├── ANIMATION_GUIDE.md    # 复用手册
 ├── REFERENCES.md         # 参考资料 + 仓库地址
 ├── README.md
 ├── LICENSE
@@ -197,7 +198,7 @@ whale-odyssey/
 
 | 文件 | 内容 |
 |---|---|
-| [HANDBOOK.md](HANDBOOK.md) | **复用手册**：技术栈 / 引擎 API 速查 / 形态系统 / 时间轴与音频 / 出片 / **14 条踩坑记录** / 性能 / 新片检查清单 |
+| [ANIMATION_GUIDE.md](ANIMATION_GUIDE.md) | **复用手册**：技术栈 / 引擎 API 速查 / 形态系统 / 时间轴与音频 / 出片 / **14 条踩坑记录** / 性能 / 新片检查清单 |
 | [REFERENCES.md](REFERENCES.md) | **参考资料**：所有仓库与链接地址、视觉参考片分析、数学与物理公式出处、逐项标注实测/引用/存疑 |
 
 ---
@@ -207,7 +208,7 @@ whale-odyssey/
 - **实时播放吃性能**：1400 粒子 + 多条曲线，低端机 30fps 可能掉帧；**离线渲染不受影响**。
 - **手绘质感优先于物理正确**：微波背景那一幕是多正弦叠加的**视觉近似**（真做要球谐函数）；
   引力波用指数衰减代替 `1/r`。逐条标注见 [REFERENCES.md](REFERENCES.md) §8。
-- **材质是「平涂 + 抖动线条 + 铅笔排线」**，不是 p5.brush 那种水彩。想换水彩见 [HANDBOOK.md](HANDBOOK.md) §11-C。
+- **材质是「平涂 + 抖动线条 + 铅笔排线」**，不是 p5.brush 那种水彩。想换水彩见 [ANIMATION_GUIDE.md](ANIMATION_GUIDE.md) §11-C。
 - **音画同步以 AudioContext 时钟为准**；输出延迟大时用页面上的「偏移」微调。
 - **参考片的原始出处未确认**（B 站为搬运版），详见 [REFERENCES.md](REFERENCES.md) §11。
 

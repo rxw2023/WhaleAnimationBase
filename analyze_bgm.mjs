@@ -1,7 +1,7 @@
-// analyze-bgm.mjs — 零依赖 BGM 分析器：测 BPM、拍点相位、段落结构，并推荐配片区间
+// analyze_bgm.mjs — 零依赖 BGM 分析器：测 BPM、拍点相位、段落结构，并推荐配片区间
 //
-//   node analyze-bgm.mjs assets/bgm.mp3
-//   node analyze-bgm.mjs assets/bgm.mp3 --target=45     想要多长的片子
+//   node analyze_bgm.mjs assets/bgm.mp3
+//   node analyze_bgm.mjs assets/bgm.mp3 --target=45     想要多长的片子
 //
 // 原理：ffmpeg 解码成单声道 PCM → 逐帧对数能量的正向差分（onset 强度）
 //      → 自相关求周期（BPM）→ 用 onset 打分的相位搜索求第一个拍点

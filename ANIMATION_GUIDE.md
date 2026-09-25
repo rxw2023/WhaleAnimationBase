@@ -9,7 +9,7 @@
 
 ```bash
 # 1) 复制整个项目当模板
-cp -r whale-odyssey my-new-film && cd my-new-film
+cp -r WhaleAnimationBase my-new-film && cd my-new-film
 rm -rf out/* && mkdir -p out
 
 # 2) 只改三个地方就能变成新片子：
@@ -324,7 +324,7 @@ G.T.dur = G.barT(G.T.len);             // = 21 × (60/100×4) = 50.4 秒
 **不要凭感觉填 BPM。** 用内置分析器实测：
 
 ```bash
-node analyze-bgm.mjs assets/bgm.mp3 --target=45
+node analyze_bgm.mjs assets/bgm.mp3 --target=45
 ```
 
 输出：**BPM（BPM×相位联合精修到 0.01）** · **第一拍时刻** · **小节重拍** ·
@@ -527,8 +527,8 @@ p5.brush 的 `fill / fillBleed / fillTexture / hatch` 上。
 ## 12 · 文件清单
 
 ```
-whale-odyssey/
-  HANDBOOK.md      ← 本文档
+WhaleAnimationBase/
+  ANIMATION_GUIDE.md      ← 本文档
   README.md        ← 这一部片子的说明（镜头表 / 剧情）
   index.html       播放器页面
   js/core.js       引擎内核（通用，不要改）

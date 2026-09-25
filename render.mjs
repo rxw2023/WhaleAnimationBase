@@ -4,7 +4,7 @@
 //   node render.mjs --stills=0.5,6,30 --out=out/stills        导出若干全分辨率 PNG 静帧
 //   node render.mjs --sheet=0,6,12,24,36,47 --cols=3 --w=520 --out=out/sheet.jpg   联络表（快速审片）
 //   node render.mjs --frames=0:48 --fps=24 --out=out/frames --workers=4            逐帧 JPEG（可断点续传）
-//   node render.mjs --encode --fps=24 --audio=assets/bgm.mp3 --out=out/whale.mp4   用 ffmpeg 合成 MP4
+//   node render.mjs --encode --fps=24 --audio=assets/bgm.mp3 --out=out/video.mp4   用 ffmpeg 合成 MP4
 //   node render.mjs --clip=0:8 --fps=24 --audio=assets/bgm.mp3 --out=out/clip.mp4  只渲一小段并直接出片
 //
 // 需要：本机装了 Chrome（或用 --chrome=<路径>），出 MP4 时需要 ffmpeg。
@@ -134,7 +134,7 @@ if (mode === 'encode') {
   const dir = resolve(ROOT, args.dir || 'out/frames');
   const files = existsSync(dir) ? readdirSync(dir).filter(f => f.endsWith('.jpg')) : [];
   if (!files.length) { console.error('没有帧：' + dir); process.exit(1); }
-  const out = resolve(ROOT, args.out || 'out/whale.mp4');
+  const out = resolve(ROOT, args.out || 'out/video.mp4');
   mkdirSync(dirname(out), { recursive: true });
   const a = ['-y', '-loglevel', 'error', '-stats', '-framerate', String(FPS), '-i', join(dir, 'f%05d.jpg')];
   if (args.audio) {

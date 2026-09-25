@@ -223,7 +223,7 @@
     const ab = A.wavArrayBuffer(); if (!ab) return;
     const blob = new Blob([ab], { type: 'audio/wav' });
     const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob); a.download = name || 'whale-odyssey-demo.wav';
+    a.href = URL.createObjectURL(blob); a.download = name || 'WhaleAnimationBase-demo.wav';
     a.click();
   };
 })(window.DSG);
