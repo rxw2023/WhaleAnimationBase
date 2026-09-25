@@ -177,7 +177,7 @@ whale-odyssey/
 │   ├── hero.jpg
 │   ├── morph.jpg
 │   └── sheet.jpg
-├── assets/               # 放你自己的音乐（已被 .gitignore 排除）
+├── assets/               # 用户自备音乐（已被 .gitignore 排除）
 │   └── README.txt
 ├── out/                  # 渲染产物（已被 .gitignore 排除）
 ├── HANDBOOK.md           # 复用手册
