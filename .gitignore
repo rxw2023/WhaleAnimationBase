@@ -1,0 +1,18 @@
+# ── 渲染产物（体积大，且成片里含未授权的商业音乐）──
+out/
+*.pcm
+
+# ── 无头 Chrome 的临时 profile ──
+.chrome-*/
+
+# ── 商业音乐：请勿提交。自行准备 assets/bgm.mp3，切段产物同理 ──
+assets/bgm.mp3
+assets/bgm-45s.m4a
+assets/*.wav
+
+# ── 系统 / 编辑器 ──
+.DS_Store
+Thumbs.db
+node_modules/
+.vscode/
+.idea/
