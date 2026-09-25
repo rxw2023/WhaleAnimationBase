@@ -77,13 +77,13 @@
 
 ### 1.2 分析方法
 
-`@bash
+```bash
 # 抽帧看全貌（每 0.5 秒一格，拼成 8×8 联络表）
 ffmpeg -y -i ref.mp4 -vf "fps=2,scale=240:-1,tile=8x8" -frames:v 1 overview.png
 
 # 自动找切点（scene 变化 > 0.30 的帧）
 ffmpeg -hide_banner -i ref.mp4 -vf "select='gt(scene,0.30)',showinfo" -an -f null -
-`@
+```
 
 ### 1.3 画面结构（抽帧读出来的）
 
@@ -232,10 +232,10 @@ ffmpeg -hide_banner -i ref.mp4 -vf "select='gt(scene,0.30)',showinfo" -an -f nul
 原则：**让片子最贵的那一幕落在副歌上**。本片高潮是"黑洞"（片内 30.5 s），
 所以起点取原曲小节线 **20.5318 s** → 黑洞落在副歌、片尾落在副歌高潮。
 
-`@bash
+```bash
 ffmpeg -y -ss 20.5318 -i assets/bgm.mp3 -t 45 \
   -af "afade=t=out:st=43.4:d=1.6" -c:a aac -b:a 256k assets/bgm-45s.m4a
-`@
+```
 
 切点在小节线上 ⇒ 片内 `t=0` 就是重拍 ⇒ `G.T.off = 0`。端到端复核误差 **约 7 ms**。
 
@@ -291,14 +291,14 @@ ffmpeg -y -ss 20.5318 -i assets/bgm.mp3 -t 45 \
 
 ## 10 · 怎么引用这份作品
 
-`@text
+```text
 动画/代码：whale-odyssey —— 基于以下参考独立实现：
   · 视觉语言：参考片（手绘科普动画，32s / 24fps / 1920×1080）
   · 工程架构：JohnHeibel/PDoomVideo（每帧纯函数 + 无头 Chrome 逐帧 + ffmpeg）
   · 材质概念：acamposuribe/p5.brush（笔刷/排线/水彩的能力清单；本片未使用其代码）
   · 数学：开普勒第三定律、杨氏双缝、Vogel 叶序模型等（见 §8）
 配乐：The Chainsmokers & Coldplay《Something Just Like This》（仅个人预览，未获授权）
-`@
+```
 
 ---
 

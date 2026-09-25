@@ -54,9 +54,9 @@
 
 每个粒子的位置是**两种形态的加权混合**：
 
-`@js
+```js
 pos(i, t) = form[形态A](i, t) × (1 − k) + form[形态B](i, t) × k
-`@
+```
 
 所以粒子是**真的从花盘飞到星系轨道上**，不是叠化。位置、拖尾、粗细、颜色、透明度一起插值。
 
@@ -76,11 +76,11 @@ pos(i, t) = form[形态A](i, t) × (1 − k) + form[形态B](i, t) × k
 
 ## 快速开始
 
-`@bash
+```bash
 git clone <this-repo> && cd whale-odyssey
 # 不需要 install。直接：
 双击 index.html
-`@
+```
 
 | 快捷键 | 作用 |
 |---|---|
@@ -118,9 +118,9 @@ git clone <this-repo> && cd whale-odyssey
 
 成片用的是 **The Chainsmokers & Coldplay《Something Just Like This》**。BPM 不是猜的，是实测的：
 
-`@bash
+```bash
 node analyze-bgm.mjs assets/bgm.mp3 --target=45
-`@
+```
 
 | 项 | 实测值 |
 |---|---|
@@ -139,7 +139,7 @@ node analyze-bgm.mjs assets/bgm.mp3 --target=45
 
 ## 导出成片
 
-`@bash
+```bash
 node render.mjs --selftest                          # 自检：幕数 / 音轨 / JS 错误
 node render.mjs --sheet=0,6,12,20,26 --cols=4 --w=430 --out=out/sheet.jpg   # 联络表（审片用）
 
@@ -150,7 +150,7 @@ node render.mjs --encode --fps=30 --audio=assets/bgm-45s.m4a --out=out/whale-ody
 
 # 只渲一小段
 node render.mjs --clip=25:32 --fps=30 --audio=assets/bgm-45s.m4a --out=out/clip.mp4
-`@
+```
 
 需要本机有 **Chrome** 与 **ffmpeg**。渲染器不用 puppeteer，它用 Node 内置的 `fetch` /
 `WebSocket` 直连 Chrome DevTools Protocol（`--remote-debugging-port=0` + 读 `DevToolsActivePort`）。
@@ -161,20 +161,31 @@ node render.mjs --clip=25:32 --fps=30 --audio=assets/bgm-45s.m4a --out=out/clip.
 
 ## 目录结构
 
-`@text
-index.html          播放器页面（经典 <script> 按顺序加载）
-js/core.js          引擎内核：数学 / 确定性抖动 / 铅笔排线 / 纸纹 / 相机 / 手写字 / 群飞·叶序·分叉·棱镜·黑洞
-js/char.js          主角小鲸鱼（支持 paint/sketch：铅笔稿 → 上色两个阶段）
-js/props.js         道具：气泡 / 音符 / 波纹 / 海草 / 数据光点
-js/odyssey.js       ★ 剧本：13 幕形态系统（换片子只改这个）
-js/audio.js         音频：示范 BGM 离线合成 / 外部 BGM / 节拍器 / 导出 WAV
-js/main.js          播放器逻辑 + 离线渲染接口（window.renderAt / renderSheet）
-render.mjs          离线渲染器
-analyze-bgm.mjs     配乐分析器（实测 BPM / 拍点 / 段落结构 / 推荐选段）
-docs/               README 用图
-assets/             放你自己的 bgm（已被 .gitignore 排除）
-out/                渲染产物（已被 .gitignore 排除）
-`@
+```text
+whale-odyssey/
+├── index.html            # 播放器页面（经典 <script> 按顺序加载）
+├── js/                   # 引擎 + 剧本
+│   ├── core.js           # 内核：数学 / 确定性抖动 / 铅笔排线 / 纸纹 / 相机 / 手写字
+│   ├── char.js           # 主角小鲸鱼（paint / sketch：铅笔稿 → 上色）
+│   ├── props.js          # 道具：气泡 / 音符 / 波纹 / 海草 / 数据光点
+│   ├── odyssey.js        # ★ 剧本：13 幕形态系统（换片子只改这个）
+│   ├── audio.js          # 音频：示范 BGM 离线合成 / 外部 BGM / 节拍器 / 导出 WAV
+│   └── main.js           # 播放器逻辑 + 离线渲染接口
+├── render.mjs            # 离线渲染器：无头 Chrome 逐帧 → ffmpeg 编码
+├── analyze-bgm.mjs       # 配乐分析器：实测 BPM / 拍点 / 段落结构 / 选段推荐
+├── docs/                 # README 配图
+│   ├── hero.jpg
+│   ├── morph.jpg
+│   └── sheet.jpg
+├── assets/               # 放你自己的音乐（已被 .gitignore 排除）
+│   └── README.txt
+├── out/                  # 渲染产物（已被 .gitignore 排除）
+├── HANDBOOK.md           # 复用手册
+├── REFERENCES.md         # 参考资料 + 仓库地址
+├── README.md
+├── LICENSE
+└── .gitignore
+```
 
 **分层原则：把"画什么形状"和"怎么画"分开。** `odyssey.js` 只管形状与时间，
 `core.js` 只管笔触与质感。所以想换材质（比如换成 p5.brush 水彩）只动 `core.js` 一层，
