@@ -275,6 +275,50 @@
     return { url: c.toDataURL('image/jpeg', 0.82), ms: ms };
   };
 
+  // ---------------- 角色标准姿势表 ----------------
+  // 3 行 × 2 列：上色阶段（铅笔稿 / 半上色 / 完成稿）× 表情姿势。
+  // 同一个 drawRig 同时供页面调试模式（?rig=1）与 render.mjs --rig 使用，
+  // 改完 char.js 直接出图对照，不用反复手动截图。
+  const RIG_SCALE = 1.40, RIG_DX = 54, RIG_DY = 8;
+  const RIG = [
+    { label: 'paint 0 · 铅笔稿',           o: { sketch: 1, paint: 0 } },
+    { label: 'paint 0.5 · 半上色',         o: { sketch: 0.5, paint: 0.5 } },
+    { label: 'paint 1 · 完成稿',           o: { paint: 1 } },
+    { label: 'paint 1 · 地面投影',         o: { paint: 1, ground: 1 } },
+    { label: 'happy · 喷水',               o: { paint: 1, mood: 'happy', spout: 1 } },
+    { label: 'dir -1 · wow',               o: { paint: 1, dir: -1, mood: 'wow' } },
+  ];
+  function drawRig(x, t) {
+    const cellW = W / 2, cellH = H / 3;
+    x.save();
+    x.fillStyle = G.PAL.paper; x.fillRect(0, 0, W, H);
+    x.textAlign = 'left'; x.textBaseline = 'top';
+    for (let i = 0; i < RIG.length; i++) {
+      const col = i % 2, row = Math.floor(i / 2);
+      const ox = col * cellW, oy = row * cellH;
+      x.save();
+      x.beginPath(); x.rect(ox, oy, cellW, cellH); x.clip();
+      x.translate(ox + cellW / 2, oy + cellH / 2);
+      G.setCtx(x);
+      G.whale(t, RIG_DX, RIG_DY, RIG_SCALE, RIG[i].o);
+      x.restore();
+      x.strokeStyle = 'rgba(26,32,51,.16)'; x.lineWidth = 1;
+      x.strokeRect(ox + .5, oy + .5, cellW - 1, cellH - 1);
+      x.fillStyle = 'rgba(26,32,51,.55)'; x.font = '20px monospace';
+      x.fillText(RIG[i].label, ox + 18, oy + 16);
+    }
+    x.restore();
+  }
+  window.renderRig = function (opts) {
+    opts = opts || {};
+    const c = document.createElement('canvas'); c.width = W; c.height = H;
+    const x = c.getContext('2d', { alpha: false });
+    const back = G.getCtx(); G.setCtx(x);
+    drawRig(x, opts.t == null ? 0 : opts.t);
+    G.setCtx(back);
+    return { url: c.toDataURL('image/jpeg', 0.88) };
+  };
+
   // ---------------- 启动 ----------------
   async function boot() {
     if (window.__errs && window.__errs.length) setStatus('JS 错误：' + window.__errs.join(' | '));
@@ -285,13 +329,8 @@
     try { if (document.fonts && document.fonts.ready) await document.fonts.ready; } catch (e) { }
     if (qs.has('rig')) {
       const rt = parseFloat(qs.get('t')) || 0;
-      G.drawPaper();
-      G.sparkle(0, 0, 0, '#fff', 0);
-      G.whale(rt, W * 0.25, H * 0.28, 1.75, { sketch: 1, paint: 0 });
-      G.whale(rt, W * 0.72, H * 0.28, 1.75, { sketch: 0.5, paint: 0.5 });
-      G.whale(rt, W * 0.25, H * 0.75, 1.75, { paint: 1, ground: 1 });
-      G.whale(rt, W * 0.72, H * 0.75, 1.75, { paint: 1, dir: -1, spout: 1, mood: 'happy' });
-      setStatus('rig 调试模式');
+      drawRig(ctx, rt);
+      setStatus('rig 调试模式 · 角色标准姿势表');
       window.ready = true; return;
     }
     if (qs.has('render')) {

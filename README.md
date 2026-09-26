@@ -75,6 +75,29 @@ pos(i, t) = form[形态A](i, t) × (1 − k) + form[形态B](i, t) × k
 
 ---
 
+## 主角：一只小鲸鱼
+
+角色是**纯参数化**画出来的（没有一张贴图），也是全片唯一的"实体演员"，所以造型值得单说。
+设计上只守三件事：
+
+| 原则 | 做法 |
+|---|---|
+| **剪影先成立** | 钝圆的大头（吻端半椭圆）+ 颈后最宽 + 收细的尾柄 + 两叶尾鳍。只看黑色剪影也必须认得出是鲸 |
+| **体积靠一条渐变** | 不叠色块，而是裁进轮廓后画一条竖向渐变：背深 → 侧蓝 → 腹白（鲸式的反荫蔽） |
+| **配件小而少** | 背鳍小且后置、胸鳍是窄桨不是宽叶、远侧胸鳍几乎藏在身体后面 |
+
+其余细节都服务"可爱"而不是"写实"：大眼 + **上眼睑**（不是一个贴上去的白圈）、
+眼下颊部的腮红、吻部亮块、四条喉褶、被风吹歪的喷水。
+
+改角色只动 `js/char.js`：形体常量在文件顶部（`CAPX / CAPRY / TAILX / TOP / BOT`、尾鳍张角），
+五官坐标在 `G.whale` 里，尾叶与胸鳍共用 `lobePts()` —— 一个"沿脊椎线扫出宽叶"的生成器。
+
+```bash
+node render.mjs --rig --out=out/rig.jpg     # 角色标准姿势表：铅笔稿 / 半上色 / 完成稿 / 表情
+```
+
+---
+
 ## 快速开始
 
 ```bash
@@ -92,7 +115,7 @@ git clone <this-repo> && cd WhaleAnimationBase
 | P | 导出当前帧 PNG |
 | F | 全屏 |
 
-调试参数：`?t=22` 静帧 · `?render=1` 离线渲染模式 · `?bare=1` 只留画布 · `?rig=1` 角色姿势检查
+调试参数：`?t=22` 静帧 · `?render=1` 离线渲染模式 · `?bare=1` 只留画布 · `?rig=1` 角色标准姿势表（3×2）
 
 > `index.html` 用的是**经典 `<script>` 而不是 ES module**，所以 `file://` 双击可用
 > （module 会被 CORS 拦）。同理 `fetch` 本地文件会失败，所有数据都写在 js 里。
@@ -143,6 +166,7 @@ node analyze_bgm.mjs assets/bgm.mp3 --target=45
 ```bash
 node render.mjs --selftest                          # 自检：幕数 / 音轨 / JS 错误
 node render.mjs --sheet=0,6,12,20,26 --cols=4 --w=430 --out=out/sheet.jpg   # 联络表（审片用）
+node render.mjs --rig --out=out/rig.jpg             # 角色标准姿势表（改了 char.js 先出这张）
 
 # 整片（推荐）
 node render.mjs --dumpdemo=out/demo.wav             # 没音乐时先导出内置合成音轨
@@ -167,7 +191,7 @@ WhaleAnimationBase/
 ├── index.html            # 播放器页面（经典 <script> 按顺序加载）
 ├── js/                   # 引擎 + 剧本
 │   ├── core.js           # 内核：数学 / 确定性抖动 / 铅笔排线 / 纸纹 / 相机 / 手写字
-│   ├── char.js           # 主角小鲸鱼（paint / sketch：铅笔稿 → 上色）
+│   ├── char.js           # ★ 主角小鲸鱼（参数化造型；paint / sketch：铅笔稿 → 上色）
 │   ├── props.js          # 道具：气泡 / 音符 / 波纹 / 海草 / 数据光点
 │   ├── odyssey.js        # ★ 剧本：13 幕形态系统（换片子只改这个）
 │   ├── audio.js          # 音频：示范 BGM 离线合成 / 外部 BGM / 节拍器 / 导出 WAV
@@ -198,7 +222,7 @@ WhaleAnimationBase/
 
 | 文件 | 内容 |
 |---|---|
-| [ANIMATION_GUIDE.md](ANIMATION_GUIDE.md) | **复用手册**：技术栈 / 引擎 API 速查 / 形态系统 / 时间轴与音频 / 出片 / **14 条踩坑记录** / 性能 / 新片检查清单 |
+| [ANIMATION_GUIDE.md](ANIMATION_GUIDE.md) | **复用手册**：技术栈 / 引擎 API 速查 / 形态系统 / 时间轴与音频 / 出片 / **16 条踩坑记录** / 性能 / 新片检查清单 |
 | [REFERENCES.md](REFERENCES.md) | **参考资料**：所有仓库与链接地址、视觉参考片分析、数学与物理公式出处、逐项标注实测/引用/存疑 |
 
 ---

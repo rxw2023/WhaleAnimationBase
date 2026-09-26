@@ -123,7 +123,7 @@ const b64 = url => Buffer.from(url.slice(url.indexOf(',') + 1), 'base64');
 const run = (cmd, a) => new Promise((ok, bad) => { const p = spawn(cmd, a, { stdio: 'inherit' }); p.on('close', c => c ? bad(new Error(cmd + ' 退出码 ' + c)) : ok()); });
 
 // ---------------- 命令 ----------------
-const mode = args.encode ? 'encode' : args.sheet ? 'sheet' : args.stills ? 'stills' : args.clip ? 'clip' : args.frames ? 'frames' : args.dumpdemo ? 'dumpdemo' : args.selftest ? 'selftest' : 'help';
+const mode = args.encode ? 'encode' : args.sheet ? 'sheet' : args.rig ? 'rig' : args.stills ? 'stills' : args.clip ? 'clip' : args.frames ? 'frames' : args.dumpdemo ? 'dumpdemo' : args.selftest ? 'selftest' : 'help';
 
 if (mode === 'help') {
   console.log('用法见本文件顶部注释。至少给一个：--stills= --sheet= --frames=0:48 --clip=0:8 --encode');
@@ -176,6 +176,18 @@ if (mode === 'selftest') {
   console.log('shots: ' + shots + '   page errors: ' + (errs || '(none)'));
   console.log('status: ' + st);
   console.log('timeline: ' + dur + ' s    demo buffer: ' + bt + ' s / ' + bl + ' samples');
+  c.close(); shutdown(); process.exit(0);
+}
+
+if (mode === 'rig') {
+  // 角色标准姿势表：改 char.js 后出图对照（--rig=1.2 可换 t）
+  const out = resolve(ROOT, args.out || 'out/rig.jpg');
+  mkdirSync(dirname(out), { recursive: true });
+  const c = await openPage();
+  const t = typeof args.rig === 'string' ? Number(args.rig) : 0;
+  const r = await c.eval('window.renderRig({ t: ' + (isFinite(t) ? t : 0) + ' })');
+  writeFileSync(out, b64(r.url));
+  console.log(out);
   c.close(); shutdown(); process.exit(0);
 }
 

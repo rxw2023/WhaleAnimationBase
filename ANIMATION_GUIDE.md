@@ -198,8 +198,8 @@ G.whale(t, x, y, 尺寸, {
   dir: 1,          // +1 头朝右 / -1 头朝左（整体镜像）
   tilt: 0, mood: 'idle',   // idle|happy|sing|wow|dizzy|heart|sleep|wink
   squash: 1, stretch: 1, blink: 0,
-  spout: 0, aura: 0, alpha: 255, blush: 105, eyeR: 16,
-  tailSpeed: 2.6, tailL: 100, tailS: 80, wave: 18,
+  spout: 0, aura: 0, alpha: 255, blush: 105, eyeR: 15.5,
+  tailSpeed: 2.6, tailL: 100, tailS: 30, wave: 18,
   emote: 'note',   // note|heart|spark|star5|excl|q|sweat|zzz
   emoteO: { pop: 1, alpha: 255, color }
 })
@@ -207,9 +207,28 @@ G.whale(t, x, y, 尺寸, {
 G.emote(kind, x, y, s, t, o)   // 单独画情绪符号
 ```
 
-角色是**纯参数化绘制**的（`bodyPts` 身体 / `flukePts` 尾鳍 / `dorsalPts` 背鳍 /
-`flipperPts` 胸鳍 / `spout` 喷水），没有贴图。改角色就改这几个函数。
-`index.html?rig=1` 可以看到标准姿势。
+角色是**纯参数化绘制**的（`bodyPts` 身体 / `lobePts` 通用宽叶生成器 / `flukePts` 尾鳍 /
+`dorsalPts` 背鳍 / `flipperPts` 胸鳍 / `spout` 喷水），没有贴图。
+
+形体比例集中在文件顶部的常量里，改这几个数就能改比例：
+
+| 常量 | 作用 |
+|---|---|
+| `CAPX / CAPRX / CAPRY` | 吻端半椭圆 —— **钝头**靠它，不是把身体拉圆 |
+| `TAILX / TAILH` | 尾柄位置与半高（要**细**，尾鳍才显得大） |
+| `TOP / BOT` | 背缘 / 腹缘的半高关键帧，`u: 0=吻后 1=尾柄`；峰值放在 `u≈0.26` |
+| `FX / FY`、`ANG_UP / ANG_DN` | 尾鳍根部（要**藏进身体里**，两叶的中缝才看不见）与两叶张角 |
+
+`bodyPts()` 生成的是一条**角度单调**的闭合轮廓，所以按 `y` 取子集就是一段连续弧，
+可以直接喂给 `hatchFill()` 做"只给背 / 腹排线"——见第 8 章坑 16。
+
+出角色设定图（改完 `char.js` 立刻出图对照，别靠手动截图）：
+
+```bash
+node render.mjs --rig --out=out/rig.jpg    # 3×2：铅笔稿 / 半上色 / 完成稿 / 地面投影 / happy / dir-1
+```
+
+`index.html?rig=1` 是同一张图，页面里直接看。
 
 ### 4.10 `props.js`
 
@@ -244,6 +263,7 @@ A.connectCapture(dest) / A.disconnectCapture()          // 给 MediaRecorder 抓
 ```js
 window.renderAt(t, type, q)             // 渲染第 t 秒 → 返回 dataURL（离线渲染器调这个）
 window.renderSheet(times, cols, cellW)  // 联络表 → {url, ms}
+window.renderRig({t})                   // 角色标准姿势表（3×2）→ {url}；render.mjs --rig 调它
 window.ready                            // 页面就绪标志（渲染器轮询它）
 window.__errs                           // 全局错误收集（自检会打印）
 ```
@@ -358,6 +378,7 @@ node render.mjs --selftest                       # 自检：幕数 / 音轨 / JS
 node render.mjs --dumpdemo=out/demo.wav          # 导出内置音轨（出片带声音）
 node render.mjs --stills=25.8,30.8 --out=out/s  # 全分辨率静帧
 node render.mjs --sheet=0,6,12,20,26 --cols=4 --w=430 --out=out/sheet.jpg   # 联络表（审片）
+node render.mjs --rig --out=out/rig.jpg                                          # 角色标准姿势表
 
 node render.mjs --clip=25:32 --fps=30 --audio=out/demo.wav --workers=4 --out=out/clip.mp4
 
@@ -473,6 +494,23 @@ if (showOutline > 0.02) G.paint(polyPts, { ink: ..., inkOp: 170 * clamp(showOutl
 **处置**：先 `read` 再修改；若文件中原有的特征标识（如已写入的函数名）消失，**应首先怀疑文件被替换**，
 确认现状后再操作，不要强行覆盖。
 
+### ⚠️ 坑 15：用色块叠明暗 → 腹部会出现一条硬边
+
+主角最初是这么上色的：背上盖一块深蓝椭圆（`fillOp: 105`）+ 腹部盖一块奶油椭圆（`fillOp: 215`）。
+结果是**椭圆自己的边缘**变成了一条可见的轮廓线，远看像鲸鱼穿了件白围裙。
+**修**：裁进身体轮廓后画**一条竖向多段渐变**（背深 → 侧蓝 → 腹白），再补一层轻排线。
+体积出来了，而且没有任何"块"的边界。同理：亮块只叠一层，`fillOp` 别超过 ~130。
+
+### ⚠️ 坑 16：`hatchFill` 的子集必须是轮廓上**连续的一段弧**
+
+"只给背上排线"的做法是把轮廓点按 `y < 0` 过滤出一个子集再喂给 `hatchFill`。
+这一步成立的前提是：**轮廓点集本身绕形状单调排列**（角度单调）。
+本项目里 `bodyPts()` 的顺序是"背缘(额头→尾柄) → 腹缘(尾柄→下巴) → 吻端半椭圆(下巴→额头)"，
+所以按 `y` 过滤出来正好是连续的一段，闭合后是合法多边形。
+一旦把轮廓改成"按 x 排列"，同一个过滤会得到**自交**多边形，`hatchFill` 的 `clip` 就会把整块身体
+都排上线——而且**不报错，只是画错**。
+**自检**：把过滤出的点连成折线看一眼，它应该沿边界走一段，而不是横跨形状的一条弦。
+
 ---
 
 ## 9 · 性能与参数速查
@@ -514,8 +552,10 @@ if (showOutline > 0.02) G.paint(polyPts, { ink: ..., inkOp: 170 * clamp(showOutl
 保留全部引擎，重写 `odyssey.js`。10 分钟就能起一部新片。
 
 **B. 只换角色**
-重写 `char.js` 里的 `bodyPts/flukePts/dorsalPts/flipperPts/spout` 五个函数，
-外形随便换（鱼、鸟、飞船都行），剧本不用动。用 `?rig=1` 检查姿势。
+重写 `char.js` 里的 `bodyPts/flukePts/dorsalPts/flipperPts/spout`，外形随便换
+（鱼、鸟、飞船都行），剧本不用动；`node render.mjs --rig --out=out/rig.jpg` 出标准姿势表，边看边调。
+**但外层接口必须保持不变**（`G.whale(t, x, y, s, o)` 和那组 `o` 选项），
+否则 `odyssey.js` 里的 `whaleAt()` 会断。
 
 **C. 换笔触材质（比如换成 p5.brush 水彩）**
 只动 `core.js` 的 `paint() / stroke() / hatchFill()` 三处，把它们接到
