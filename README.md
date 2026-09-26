@@ -1,4 +1,4 @@
-![hero](docs/hero.jpg)
+![cover](docs/cover.jpg)
 
 # Whale Animation Base
 ### 小鲸鱼 · 一直在游 —— *The Long Swim*
@@ -26,6 +26,8 @@
 剧情是一条探索线：**海里的家 → 破水面 → 一路所见（光 / 网 / 波 / 花）→ 离地 → 太阳系 →
 星系 → 时空 → 黑洞 → 隧道 → 地出 → 星图 → 回到海里**。
 首尾用同一套相机与配色收尾，所以片子**可以循环播放** —— 探索不结束。
+
+![hero](docs/hero.jpg)
 
 | 时间 | 幕 | 字幕 |
 |---|---|---|
@@ -101,10 +103,6 @@ pos(i, t) = form[形态A](i, t) × (1 − k) + form[形态B](i, t) × k
 改角色只动 `js/char.js`：形体常量在文件顶部（`CAPX / CAPRX / CAPRY / TAILX / TOP / BOT`、
 尾鳍张角），白月牙的嘴线是 `MOUTH`，五官坐标在 `G.whale` 里，
 尾叶与胸鳍共用 `lobePts()` —— 一个"沿脊椎线扫出宽叶"的生成器。
-
-**另一个姿势：`pose: 'curl'`。** 标识原本就是那个姿势 —— 鲸鱼蜷成一团。片子里用不上
-（它要游），但做标题 / 封面时那才是"一眼认出"的一版：脊椎是一条圆弧、头厚尾细，
-白月牙填在洞口的里侧。姿势表的最后两格就是它。
 
 **喷水只在"海里"的幕出现**（海洋 + 上浮）。太空里没有水可喷。
 闸门取的是当前形态权重 `WTS[F_SEA] + WTS[F_UPWELL]`，所以进出水是自动淡入淡出的，
@@ -226,7 +224,9 @@ WhaleAnimationBase/
 │   └── main.js           # 播放器逻辑 + 离线渲染接口
 ├── render.mjs            # 离线渲染器：无头 Chrome 逐帧 → ffmpeg 编码
 ├── analyze_bgm.mjs       # 配乐分析器：实测 BPM / 拍点 / 段落结构 / 选段推荐
-├── docs/                 # README 配图
+├── docs/                 # README 配图 / 视频封面
+│   ├── cover.jpg         # 视频封面（从成片截的第 29.2s 那一帧）
+│   ├── cover-alt.jpg     # 备用封面（第 25.1s · 向日葵）
 │   ├── hero.jpg
 │   ├── morph.jpg
 │   ├── sheet.jpg

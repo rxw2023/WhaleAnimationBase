@@ -279,7 +279,7 @@
   // 3 行 × 2 列：上色阶段（铅笔稿 / 半上色 / 完成稿）× 表情姿势。
   // 同一个 drawRig 同时供页面调试模式（?rig=1）与 render.mjs --rig 使用，
   // 改完 char.js 直接出图对照，不用反复手动截图。
-  const RIG_SCALE = 1.20, RIG_DX = 54, RIG_DY = 8;
+  const RIG_SCALE = 1.40, RIG_DX = 54, RIG_DY = 8;
   const RIG = [
     { label: 'paint 0 · 铅笔稿',           o: { sketch: 1, paint: 0 } },
     { label: 'paint 0.5 · 半上色',         o: { sketch: 0.5, paint: 0.5 } },
@@ -287,11 +287,9 @@
     { label: 'paint 1 · 地面投影',         o: { paint: 1, ground: 1 } },
     { label: 'happy · 喷水',               o: { paint: 1, mood: 'happy', spout: 1 } },
     { label: 'dir -1 · wow',               o: { paint: 1, dir: -1, mood: 'wow' } },
-    { label: 'pose curl · 标识原姿势',     o: { paint: 1, pose: 'curl' }, s: 0.66 },
-    { label: 'pose curl · 铅笔稿',         o: { paint: 0, sketch: 1, pose: 'curl' }, s: 0.66 },
   ];
   function drawRig(x, t) {
-    const cellW = W / 2, cellH = H / 4;
+    const cellW = W / 2, cellH = H / 3;
     x.save();
     x.fillStyle = G.PAL.paper; x.fillRect(0, 0, W, H);
     x.textAlign = 'left'; x.textBaseline = 'top';
@@ -302,7 +300,7 @@
       x.beginPath(); x.rect(ox, oy, cellW, cellH); x.clip();
       x.translate(ox + cellW / 2, oy + cellH / 2);
       G.setCtx(x);
-      G.whale(t, RIG_DX, RIG_DY, RIG_SCALE * (RIG[i].s || 1), RIG[i].o);
+      G.whale(t, RIG_DX, RIG_DY, RIG_SCALE, RIG[i].o);
       x.restore();
       x.strokeStyle = 'rgba(26,32,51,.16)'; x.lineWidth = 1;
       x.strokeRect(ox + .5, oy + .5, cellW - 1, cellH - 1);

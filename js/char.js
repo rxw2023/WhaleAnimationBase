@@ -164,97 +164,10 @@
     C.restore();
   }
 
-  // ======================= 蜷成一团（标识的原姿势）=======================
-  // 侧视那只用来游，这只用来当标题/封面：脊椎是一条圆弧，头厚尾细，白月牙贴内缘。
-  const CS = 132;                                   // 蜷姿的整体尺度
-  const CURL_A0 = Math.PI * 4 / 3, CURL_A1 = -Math.PI * 0.22;   // 240° → −40°（开口朝上）
-  const CURL_TA = -2.263;                           // 尾端切线方向
-  function curlSpine(u) {
-    const a = lerp(CURL_A0, CURL_A1, u), r = 0.78;
-    const h = 0.44 * Math.pow(1 - u, 0.60) + 0.055;  // 半厚：头厚尾细
-    return [Math.cos(a) * r, Math.sin(a) * r, a, h];
-  }
-  function curlBodyPts() {
-    const N = 44, up = [], lo = [];
-    for (let i = 0; i <= N; i++) {
-      const s = curlSpine(i / N), nx = Math.cos(s[2]), ny = Math.sin(s[2]);
-      up.push([(s[0] + nx * s[3]) * CS, (s[1] + ny * s[3]) * CS]);
-      lo.push([(s[0] - nx * s[3]) * CS, (s[1] - ny * s[3]) * CS]);
-    }
-    return up.concat(lo.reverse());
-  }
-  function curlMouthPts() {                          // 白月牙上缘（贴内缘）
-    const N = 26, q = [];
-    for (let i = 0; i <= N; i++) {
-      const s = curlSpine(lerp(0.04, 0.78, i / N)), nx = Math.cos(s[2]), ny = Math.sin(s[2]);
-      q.push([(s[0] - nx * s[3] * 1.02) * CS, (s[1] - ny * s[3] * 1.02) * CS]);
-    }
-    return q;
-  }
-  function curlJawPts() {                            // 白月牙 = 上缘（内缘）+ 往洞内收的另一条弧
-    const N = 26, a2 = [];
-    for (let i = 0; i <= N; i++) {
-      const s = curlSpine(lerp(0.04, 0.78, i / N)), nx = Math.cos(s[2]), ny = Math.sin(s[2]);
-      a2.push([(s[0] - nx * s[3] * 0.26) * CS, (s[1] - ny * s[3] * 0.26) * CS]);
-    }
-    return curlMouthPts().concat(a2.reverse());
-  }
-  function curlFluke(up) {
-    const s = curlSpine(0.93);
-    return lobePts(s[0] * CS, s[1] * CS, CURL_TA + (up ? -0.44 : 0.34),
-      up ? 116 : 86, up ? 25 : 15, up ? 0.05 : -0.05, 12);
-  }
-  function curlDorsalPts() {
-    const s = curlSpine(0.07), nx = Math.cos(s[2]), ny = Math.sin(s[2]);
-    return lobePts((s[0] + nx * s[3] * 0.70) * CS, (s[1] + ny * s[3] * 0.70) * CS, s[2] - 0.34, 42, 13, 0.10, 8);
-  }
-  function curlFlipperPts() {
-    const s = curlSpine(0.70), nx = Math.cos(s[2]), ny = Math.sin(s[2]);
-    return lobePts((s[0] + nx * s[3] * 0.66) * CS, (s[1] + ny * s[3] * 0.66) * CS, s[2] + 0.78, 58, 12, -0.12, 9);
-  }
-  const CURL_EYE = [-0.50 * CS, -0.30 * CS];
-
-  function drawCurl(t, mood, o, paint, sketch, baseA) {
-    const C = G.getCtx();
-    const bp = curlBodyPts(), jw = curlJawPts();
-    const fUp = curlFluke(true), fDn = curlFluke(false);
-    if (sketch > 0.02) {
-      const sa = 110 * sketch;
-      G.stroke(G.ellPts(0, 0, 1.34 * CS, 1.34 * CS, 32, 3), { ink: P.ink2, sw: 1.4, alpha: sa * 0.6, jitter: 3, smooth: 1 });
-      G.stroke([[-1.5 * CS, 0], [1.5 * CS, 0]], { ink: P.ink2, sw: 1.2, alpha: sa * 0.8, jitter: 3, dash: [10, 12], smooth: 0 });
-      G.stroke([[0, -1.5 * CS], [0, 1.5 * CS]], { ink: P.ink2, sw: 1.2, alpha: sa * 0.6, jitter: 3, dash: [8, 10], smooth: 0 });
-      G.paint(bp, { ink: P.ink2, sw: 2.4, jitter: 2.4, inkOp: sa });
-      G.paint(jw, { ink: P.ink2, sw: 1.8, jitter: 2.4, inkOp: sa * 0.7 });
-      G.paint(fUp, { ink: P.ink2, sw: 2.1, jitter: 2.4, inkOp: sa });
-      G.paint(fDn, { ink: P.ink2, sw: 2.1, jitter: 2.4, inkOp: sa });
-    }
-    C.globalAlpha = baseA * paint;
-    G.paint(fDn, { fill: P.dsDk, fillOp: 215, ink: P.ink, sw: 2.4, jitter: 1.3 });
-    G.paint(fUp, { fill: P.ds, fillOp: 250, ink: P.ink, sw: 2.8, jitter: 1.3 });
-    G.paint(curlDorsalPts(), { fill: P.ds, fillOp: 245, ink: P.ink, sw: 2.3, jitter: 1.1 });
-    G.paint(bp, { fill: P.ds, ink: P.ink, sw: 3.0, jitter: 1.2 });
-    C.save();
-    G.tracePts(bp, 1, true);
-    C.clip();
-    const g = C.createLinearGradient(0, -1.3 * CS, 0, 1.3 * CS);
-    g.addColorStop(0.00, 'rgba(110,134,255,0.30)');
-    g.addColorStop(0.45, 'rgba(77,107,254,0.06)');
-    g.addColorStop(1.00, 'rgba(38,52,143,0.46)');
-    C.fillStyle = g; C.fillRect(-1.7 * CS, -1.7 * CS, 3.4 * CS, 3.4 * CS);
-    // 洞口填白 —— 标识里那块白月牙其实就是这个洞
-    G.paint(G.ellPts(-0.05 * CS, 0.03 * CS, 0.58 * CS, 0.56 * CS, 34, 1.3), { fill: P.cream, fillOp: 248 });
-    G.paint(jw, { fill: P.cream, fillOp: 248, jitter: 1.0 });
-    G.stroke(curlMouthPts(), { ink: P.ink, sw: 2.5, alpha: 210, jitter: .8, smooth: 1 });
-    C.restore();
-    G.paint(bp, { ink: P.ink, sw: 3.0, jitter: 1.2 });
-    eye(t, CURL_EYE[0], CURL_EYE[1], o.eyeR == null ? 11 : o.eyeR, mood, o.blink || 0);
-    G.paint(curlFlipperPts(), { fill: P.dsMid, fillOp: 245, ink: P.ink, sw: 2.4, jitter: 1.2 });
-  }
-
   // ======================= 主入口 =======================
   // whale(t, x, y, 尺寸, 选项)
   // o: dir(+1右/-1左) tilt mood squash stretch alpha aura spout blink eyeR
-  //    tailSpeed tailL tailS wave paint sketch ground blush emote emoteO pose('curl')
+  //    tailSpeed tailL tailS wave paint sketch ground blush emote emoteO
   G.whale = function (t, x, y, s, o) {
     const C = G.getCtx(); if (!C) return;
     o = o || {};
@@ -282,14 +195,6 @@
       g.addColorStop(0, 'rgba(141,166,255,' + (0.5 * o.aura) + ')');
       g.addColorStop(1, 'rgba(141,166,255,0)');
       C.save(); C.fillStyle = g; C.beginPath(); C.arc(0, 0, 210, 0, G.TAU); C.fill(); C.restore();
-    }
-
-    // 蜷成一团（标识的原姿势）：静态场合用，片子里不用
-    if (o.pose === 'curl') {
-      drawCurl(t, mood, o, paint, sketch, baseA);
-      C.restore();
-      if (o.emote) G.emote(o.emote, x + dir * 150 * s, y - 150 * s, s, t, o.emoteO);
-      return;
     }
 
     // ---- 铅笔起稿辅助线 ----
