@@ -1,25 +1,34 @@
 // char.js — 主角：DeepSeek 小鲸鱼
 // 局部坐标：侧视、头朝 +x、原点在身体中心，外层用 translate/rotate/scale 摆位。
-// 造型三原则：① 剪影先成立（大头 / 细尾柄 / 两叶尾鳍）② 体积靠一条明暗渐变，不靠糊椭圆
-//             ③ 配件小而少，每条线都要有理由
+// 造型四条原则（对着 DeepSeek 标识的方向）：
+//   ① 剪影敦实：头极大、身厚、尾短，整体接近一个圆
+//   ② 一笔认出：下颌一道白色月牙（标识里最认得出来的那一笔）
+//   ③ 眼睛小：小眼 + 一点高光，不是卡通大眼
+//   ④ 尾巴上翘：两叶尾鳍带凹口，整体向上钩
 (function (G) {
   'use strict';
   const P = G.PAL;
   const lerp = G.lerp, clamp = G.clamp;
 
   // ======================= 形体参数 =======================
-  const CAPX = 58, CAPRX = 31, CAPRY = 51;      // 吻端半椭圆（钝头的关键）
-  const TAILX = -90, TAILH = 7;                 // 尾柄位置与半高
-  // 背 / 腹缘的半高关键帧，u：0 = 吻后，1 = 尾柄。最高点落在 u≈0.26（头后一点）
-  const TOP = [[0, 51], [0.10, 53], [0.26, 55], [0.42, 52], [0.58, 42], [0.72, 28], [0.86, 15], [1, 7]];
-  const BOT = [[0, 51], [0.10, 54], [0.26, 58], [0.42, 55], [0.58, 45], [0.72, 29], [0.86, 16], [1, 7]];
+  const CAPX = 52, CAPRX = 40, CAPRY = 58;      // 吻端半椭圆：又大又钝的头
+  const TAILX = -80, TAILH = 8;                 // 尾柄
+  // 背 / 腹缘半高，u：0 = 吻后，1 = 尾柄。峰值放在 u≈0.28，且**不比头更高**
+  // —— 让头成为最宽的地方，是"敦实"的关键
+  const TOP = [[0, 58], [0.12, 58], [0.28, 57], [0.44, 53], [0.60, 44], [0.74, 30], [0.88, 16], [1, 8]];
+  const BOT = [[0, 58], [0.12, 60], [0.28, 61], [0.44, 58], [0.60, 49], [0.74, 33], [0.88, 18], [1, 8]];
   const uOfX = x => clamp((CAPX - x) / (CAPX - TAILX));
   const halfTop = u => G.kf(u, TOP), halfBot = u => G.kf(u, BOT);
-  const backY = x => -halfTop(uOfX(x));         // 轮廓上某 x 处的背缘 y
-  const bellyY = x => halfBot(uOfX(x));         // 腹缘 y
+  const backY = x => -halfTop(uOfX(x));
+  const bellyY = x => halfBot(uOfX(x));
+  // 身体下缘在任意 x 处的 y（x 越过吻端后走吻端半椭圆，bellyY 在那里是错的）
+  function lowY(x, breathe) {
+    if (x <= CAPX) return halfBot(uOfX(x)) * breathe;
+    const c = clamp((x - CAPX) / CAPRX, -1, 1);
+    return CAPRY * Math.sqrt(Math.max(0, 1 - c * c)) * breathe;
+  }
 
   // 身体轮廓：背缘(额头→尾柄) → 腹缘(尾柄→下巴) → 吻端半椭圆(下巴→额头)
-  // 整条环的角度是单调的，所以按 y 取子集就是一段连续弧，可以直接喂给 hatchFill。
   function bodyPts(breathe) {
     const N = 28, p = [];
     for (let i = 0; i <= N; i++) { const u = i / N; p.push([lerp(CAPX, TAILX, u), -halfTop(u) * breathe]); }
@@ -32,11 +41,20 @@
     return p;
   }
 
-  // 尾鳍单叶：沿脊椎线扫出的宽叶 —— 前缘饱满、后缘收窄、叶尖收成一点
-  // bend 让叶面向一方微微弯，避免两片尾叶看起来像两根直棍
+  // ★ 下颌白月牙：上缘 = 嘴线，下缘 = 身体腹线。这一笔是标识里最有辨识度的部分。
+  const MOUTH = [[88, 6], [80, 17], [70, 26], [58, 33], [44, 37], [30, 39], [16, 44], [4, 50], [-6, 56]];
+  function jawPts(breathe) {
+    // 上缘 = 嘴线（从吻端一路向后下方扫到喉部），下缘 = 身体腹线。
+    // 两条线在吻端和喉部各交于一点 ⇒ 两头都是尖的，才是"月牙"而不是"围裙"
+    const lo = [];
+    for (let k = 0; k <= 11; k++) { const x = lerp(-6, 90, k / 11); lo.push([x, lowY(x, breathe)]); }
+    return MOUTH.concat(lo);
+  }
+
+  // 尾鳍单叶：沿脊椎线扫出的宽叶，前缘饱满、后缘收窄、叶尖收成一点
   function lobePts(bx, by, ang, len, wMax, bend, N) {
     const dx = Math.cos(ang), dy = Math.sin(ang), nx = -dy, ny = dx;
-    const spine = [], lead = [], trail = [];
+    const lead = [], trail = [];
     for (let i = 0; i <= N; i++) {
       const t = i / N;
       const px = bx + dx * len * t + nx * bend * len * t * t;
@@ -49,17 +67,16 @@
     return lead;
   }
 
-  const FX = -76, FY = 6;                        // 尾鳍根部（藏在身体里，所以中缝看不见）
-  const ANG_UP = Math.PI + 0.44, ANG_DN = Math.PI - 0.44;
-  // tailL / tailS / wave 是留给调用方的比例旋钮，默认值就是标准造型
+  // ★ 尾鳍整体**向上钩**（两叶都在轴线上方），像标识那样；根部埋进身体里所以看不见中缝
+  const FX = -68, FY = 6;
+  const ANG_UP = Math.PI + 0.70, ANG_DN = Math.PI + 0.04;
   function flukePts(ph, up, tailL, tailS, wave) {
     const kL = tailL / 100, kW = tailS / 30;
-    const len = (up ? 94 : 68) * kL, wm = (up ? 20 : 12) * kW;
+    const len = (up ? 92 : 72) * kL, wm = (up ? 24 : 16) * kW;
     const pts = lobePts(FX, up ? -FY : FY,
-      (up ? ANG_UP : ANG_DN) + Math.sin(ph + (up ? 0 : 0.35)) * 0.10,
-      len, wm, up ? 0.06 : -0.06, 12);
-    // 整片尾叶绕尾柄摆动（这是"在游"的主要信号）+ 叶面自身的涟漪
-    const rot = Math.sin(ph + (up ? 0 : 0.25)) * 0.16, cs = Math.cos(rot), sn = Math.sin(rot);
+      (up ? ANG_UP : ANG_DN) + Math.sin(ph + (up ? 0 : 0.35)) * 0.09,
+      len, wm, up ? 0.05 : -0.05, 12);
+    const rot = Math.sin(ph + (up ? 0 : 0.25)) * 0.15, cs = Math.cos(rot), sn = Math.sin(rot);
     for (const q of pts) {
       const dx = q[0] - FX, dy = q[1];
       q[0] = FX + dx * cs - dy * sn;
@@ -69,82 +86,80 @@
     return pts;
   }
 
-  // 背鳍：小、后置、带一点后钩；根部埋在背线以下，让身体把它接住
+  // 背鳍：小圆钩，前置一点（标识里背上的那个小凸起）
   function dorsalPts(ph) {
     const b = Math.sin(ph) * 2.5;
     return [
-      [-34, -35], [-37, -44], [-41, -51], [-46, -56 + b], [-52, -52 + b], [-56, -45],
-      [-60, -34], [-64, -15], [-53, -23], [-42, -29],
+      [-6, -44], [-9, -54], [-14, -63 + b], [-21, -69 + b], [-28, -64 + b], [-33, -54],
+      [-37, -40], [-40, -24], [-29, -31], [-16, -38],
     ];
   }
 
-  // 胸鳍：贴在头后下方的短桨，向后下方扫；back = 远侧那只（更小更暗，压在身体后面）
+  // 胸鳍：短、尖、向后下扫；back = 远侧那只
   function flipperPts(ph, back) {
-    const swing = Math.sin(ph * 1.1 + (back ? 0.9 : 0)) * 0.15;
-    return lobePts(back ? 16 : 34, back ? 26 : 40,
-      Math.PI - (back ? 0.78 : 0.85) + swing,
-      back ? 34 : 52, back ? 7 : 11, -0.14, 9);
+    const swing = Math.sin(ph * 1.1 + (back ? 0.9 : 0)) * 0.13;
+    return lobePts(back ? 18 : 30, back ? 28 : 46,
+      Math.PI - (back ? 0.70 : 0.80) + swing,
+      back ? 34 : 46, back ? 7 : 9, -0.12, 9);
   }
 
-  // ======================= 喷水 =======================
+  // ======================= 喷水（放慢版）=======================
+  // 水柱本身是稳定的，只有很慢的横向摇摆；起伏交给调用方的 o.spout 决定。
+  // 原来 t×2.6 / t×1.7 那种频率看起来像在抽搐。
   function spout(t, k, x0, y0) {
     const C = G.getCtx();
-    const HT = 58 + 78 * k;
-    // 上端散开的水雾
+    const HT = 54 + 72 * k;
     C.save();
-    C.globalAlpha = C.globalAlpha * 0.30 * k;
+    C.globalAlpha = C.globalAlpha * 0.28 * k;
     for (let i = 0; i < 6; i++) {
-      const u = (i + 1) / 6, w = 10 + 48 * u;
-      G.paint(G.ellPts(x0 + Math.sin(t * 1.7 + i * 1.3) * 9 * u, y0 - HT * u - 6, w * 0.55, w * 0.34, 16, 1.2 + u * 3),
+      const u = (i + 1) / 6, w = 10 + 46 * u;
+      G.paint(G.ellPts(x0 + Math.sin(t * 0.55 + i * 1.3) * 10 * u, y0 - HT * u - 6, w * 0.55, w * 0.34, 16, 1.2 + u * 3),
         { fill: P.dsLt, jitter: 0 });
     }
     C.restore();
-    // 被风吹歪、向上收细的水柱
-    for (let i = 0; i < 22; i++) {
-      const u = i / 22;
-      const px = x0 + Math.sin(u * 2.1 - 0.35) * 15 * u + Math.sin(t * 2.6) * 3 * u;
+    for (let i = 0; i < 20; i++) {
+      const u = i / 20;
+      const px = x0 + Math.sin(u * 2.1 - 0.35) * 15 * u + Math.sin(t * 0.8) * 4 * u;
       const py = y0 - HT * u - 3;
-      G.dot(px, py, (5.0 - 2.4 * u) * (0.5 + 0.5 * k), i % 4 === 0 ? '#ffffff' : P.dsLt, 200 - 70 * u);
+      G.dot(px, py, (5.0 - 2.4 * u) * (0.5 + 0.5 * k), i % 4 === 0 ? '#ffffff' : P.dsLt, 190 - 60 * u);
     }
-    // 顶端四散的水滴
     for (let i = 0; i < 9; i++) {
       const a = -Math.PI * 0.5 + (G.hash(i * 3.3) - 0.5) * 2.4;
       const R = 14 + 40 * G.hash(i * 7.1) * k;
-      G.dot(x0 + 6 + Math.cos(a) * R, y0 - HT - 4 + Math.sin(a) * R * 0.55, 2.2 + G.hash(i * 5) * 2.4, P.dsLt, 175);
+      G.dot(x0 + 6 + Math.cos(a) * R + Math.sin(t * 0.7 + i) * 3,
+        y0 - HT - 4 + Math.sin(a) * R * 0.55, 2.2 + G.hash(i * 5) * 2.4, P.dsLt, 170);
     }
   }
 
-  // ======================= 眼睛 =======================
+  // ======================= 眼睛（小眼）=======================
   function eye(t, px, py, r, mood, blink) {
     const C = G.getCtx();
     const R = r * (1 - 0.05 * Math.sin(t * 2.2));
     if (blink > .55 || mood === 'sleep') {
-      G.stroke([[px - R, py - 1], [px + R, py - 1]], { ink: P.ink, sw: 3.4, jitter: .6, smooth: 0 });
+      G.stroke([[px - R, py - 1], [px + R, py - 1]], { ink: P.ink, sw: 2.8, jitter: .6, smooth: 0 });
       return;
     }
     if (mood === 'happy') {
-      G.stroke([[px - R, py + R * .45], [px, py - R * .6], [px + R, py + R * .45]], { ink: P.ink, sw: 3.6, jitter: .8 });
+      G.stroke([[px - R, py + R * .45], [px, py - R * .6], [px + R, py + R * .45]], { ink: P.ink, sw: 3.0, jitter: .8 });
       return;
     }
-    // 眼窝：一层很淡的暗色，把眼睛"按"进头里，免得像贴上去的贴纸
-    G.paint(G.ellPts(px + R * .06, py - R * .04, R * 1.30, R * 1.36, 20, .5), { fill: P.dsDk, fillOp: 46, jitter: .8 });
-    G.paint(G.ellPts(px, py, R, R * (1 - blink * .85), 20, .5), { fill: P.cream, ink: P.ink, sw: 2.7 });
+    G.paint(G.ellPts(px + R * .06, py - R * .04, R * 1.26, R * 1.30, 20, .5), { fill: P.dsDk, fillOp: 40, jitter: .8 });
+    G.paint(G.ellPts(px, py, R, R * (1 - blink * .85), 20, .5), { fill: P.cream, ink: P.ink, sw: 2.3 });
     C.save();
     C.beginPath(); C.arc(px, py, R * .94, 0, G.TAU); C.clip();
     if (mood === 'dizzy') {
-      G.stroke([[px - R * .7, py - R * .7], [px + R * .7, py + R * .7]], { ink: P.ink, sw: 3, jitter: .8, smooth: 0 });
-      G.stroke([[px + R * .7, py - R * .7], [px - R * .7, py + R * .7]], { ink: P.ink, sw: 3, jitter: .8, smooth: 0 });
+      G.stroke([[px - R * .7, py - R * .7], [px + R * .7, py + R * .7]], { ink: P.ink, sw: 2.6, jitter: .8, smooth: 0 });
+      G.stroke([[px + R * .7, py - R * .7], [px - R * .7, py + R * .7]], { ink: P.ink, sw: 2.6, jitter: .8, smooth: 0 });
     } else if (mood === 'heart') {
       G.paint(G.heartPts(px, py, R * 1.15), { fill: P.coral, ink: P.ink, sw: 2, jitter: .5 });
     } else {
-      const pr = R * (mood === 'wow' ? .76 : .60);
-      G.paint(G.ellPts(px + R * .10, py + R * .04, pr, pr * 1.05, 16, .45), { fill: P.ink, jitter: .35 });
-      G.dot(px - R * .20, py - R * .26, R * .24, '#ffffff', 240);
-      G.dot(px + R * .34, py + R * .30, R * .12, '#ffffff', 190);
-      // 上眼睑：压住眼球顶部，眼神从"贴纸"变成"活的"
-      G.paint(G.ellPts(px, py - R * .78, R * 1.24, R * .48, 18, .4), { fill: P.ds, jitter: .6 });
-      G.stroke([[px - R * .96, py - R * .38], [px - R * .2, py - R * .28], [px + R * .3, py - R * .30], [px + R * .96, py - R * .46]],
-        { ink: P.ink, sw: 1.9, alpha: 200, jitter: .5, smooth: 1 });
+      // 瞳孔占比更大 → 眼睛整体偏暗，才像标识里那颗小眼而不是卡通大眼
+      const pr = R * (mood === 'wow' ? .86 : .74);
+      G.paint(G.ellPts(px + R * .08, py + R * .04, pr, pr * 1.04, 16, .4), { fill: P.ink, jitter: .35 });
+      G.dot(px - R * .22, py - R * .26, R * .24, '#ffffff', 240);
+      G.paint(G.ellPts(px, py - R * .80, R * 1.22, R * .46, 18, .4), { fill: P.ds, jitter: .6 });
+      G.stroke([[px - R * .94, py - R * .40], [px - R * .2, py - R * .30], [px + R * .3, py - R * .32], [px + R * .94, py - R * .48]],
+        { ink: P.ink, sw: 1.7, alpha: 195, jitter: .5, smooth: 1 });
     }
     C.restore();
   }
@@ -165,8 +180,8 @@
     const tailL = o.tailL == null ? 100 : o.tailL;
     const tailS = o.tailS == null ? 30 : o.tailS;
     const wave = o.wave == null ? 18 : o.wave;
-    const paint = o.paint == null ? 1 : o.paint;      // 0 = 纯铅笔稿，1 = 完成上色
-    const sketch = o.sketch == null ? 0 : o.sketch;   // 起稿辅助线强度
+    const paint = o.paint == null ? 1 : o.paint;
+    const sketch = o.sketch == null ? 0 : o.sketch;
 
     C.save();
     C.translate(x, y);
@@ -176,105 +191,104 @@
     const baseA = C.globalAlpha;
 
     if (o.aura) {
-      const g = C.createRadialGradient(0, 0, 10, 0, 0, 200);
+      const g = C.createRadialGradient(0, 0, 10, 0, 0, 210);
       g.addColorStop(0, 'rgba(141,166,255,' + (0.5 * o.aura) + ')');
       g.addColorStop(1, 'rgba(141,166,255,0)');
-      C.save(); C.fillStyle = g; C.beginPath(); C.arc(0, 0, 200, 0, G.TAU); C.fill(); C.restore();
+      C.save(); C.fillStyle = g; C.beginPath(); C.arc(0, 0, 210, 0, G.TAU); C.fill(); C.restore();
     }
 
     // ---- 铅笔起稿辅助线 ----
     if (sketch > 0.02) {
       const sa = 115 * sketch;
-      G.stroke([[-118, 0], [112, 0]], { ink: P.ink2, sw: 1.3, alpha: sa, jitter: 3, dash: [10, 12], smooth: 0 });
-      G.stroke([[0, -72], [0, 72]], { ink: P.ink2, sw: 1.3, alpha: sa * 0.7, jitter: 3, dash: [8, 10], smooth: 0 });
-      // 吻 / 眼 / 尾柄三条定位弧
-      for (const e of [[CAPX, 0, CAPRX, CAPRY], [30, -14, 22, 22], [FX, 0, 16, 16]])
+      G.stroke([[-118, 0], [116, 0]], { ink: P.ink2, sw: 1.3, alpha: sa, jitter: 3, dash: [10, 12], smooth: 0 });
+      G.stroke([[0, -76], [0, 76]], { ink: P.ink2, sw: 1.3, alpha: sa * 0.7, jitter: 3, dash: [8, 10], smooth: 0 });
+      for (const e of [[CAPX, 0, CAPRX, CAPRY], [32, -16, 20, 20], [FX, 0, 16, 16]])
         G.stroke(G.ellPts(e[0], e[1], e[2], e[3], 26, 3), { ink: P.ink2, sw: 1.4, alpha: sa * 0.7, jitter: 3, smooth: 1 });
-      for (let i = 0; i < 6; i++) { const a = G.hash(i * 3.3) * G.TAU; G.dot(Math.cos(a) * 88, Math.sin(a) * 56, 2.2, P.ink2, sa * 0.9); }
-      // 铅笔轮廓：先勾线，再上色
+      for (let i = 0; i < 6; i++) { const a = G.hash(i * 3.3) * G.TAU; G.dot(Math.cos(a) * 92, Math.sin(a) * 60, 2.2, P.ink2, sa * 0.9); }
       G.paint(bodyPts(breathe), { ink: P.ink2, sw: 2.4, jitter: 2.4, inkOp: sa });
+      G.paint(jawPts(breathe), { ink: P.ink2, sw: 1.8, jitter: 2.4, inkOp: sa * 0.7 });
       for (const up of [true, false]) G.paint(flukePts(ph + 0.001, up, tailL, tailS, wave), { ink: P.ink2, sw: 2.1, jitter: 2.4, inkOp: sa });
       G.paint(dorsalPts(ph * 0.9), { ink: P.ink2, sw: 2.1, jitter: 2.2, inkOp: sa });
       G.paint(flipperPts(ph * 1.7, false), { ink: P.ink2, sw: 2.1, jitter: 2.2, inkOp: sa });
     }
-    // ---- 地面排线投影 ----
     if (o.ground) {
-      const gy = 98;
-      G.hatchFill([[-172, gy], [172, gy], [136, gy + 30], [-136, gy + 30]],
+      const gy = 104;
+      G.hatchFill([[-176, gy], [176, gy], [140, gy + 30], [-140, gy + 30]],
         { d: 5.5, a: -0.30, color: P.ink2, alpha: 130 * o.ground, sw: 1.7, rand: 0.55, seed: 11 });
     }
-    // 从这里开始是完成稿图层（paint=0 时整层隐去，只剩铅笔稿）
     C.globalAlpha = baseA * paint;
 
-    // ---- 身体后面的部件（根部被身体盖住）----
+    // ---- 身体后面的部件 ----
     const fDn = flukePts(ph, false, tailL, tailS, wave);
-    G.paint(fDn, { fill: P.dsDk, fillOp: 172, ink: P.ink, sw: 2.4, jitter: 1.3 });
+    G.paint(fDn, { fill: P.dsDk, fillOp: 215, ink: P.ink, sw: 2.4, jitter: 1.3 });
     const fUp = flukePts(ph, true, tailL, tailS, wave);
-    G.paint(fUp, { fill: P.dsMid, fillOp: 238, grad: [-46, 4, P.dsLt, P.dsMid], gradOp: 215, ink: P.ink, sw: 2.8, jitter: 1.3 });
-    G.stroke([fUp[0], fUp[4], fUp[8], fUp[12]], { ink: P.dsPale, sw: 5, alpha: 130, jitter: 1.4, smooth: 1 });
+    // 用身体那一支蓝：剪影才是一整块（标识的做法），只在叶尖提亮一点点
+    G.paint(fUp, { fill: P.ds, fillOp: 250, ink: P.ink, sw: 2.8, jitter: 1.3 });
+    G.stroke([fUp[0], fUp[4], fUp[8], fUp[12]], { ink: P.dsPale, sw: 4, alpha: 105, jitter: 1.4, smooth: 1 });
     G.paint(flipperPts(ph * 1.7, true), { fill: P.dsDk, fillOp: 205, ink: P.ink2, sw: 2, jitter: 1.1 });
-    G.paint(dorsalPts(ph * 0.9), { fill: P.ds, fillOp: 240, ink: P.ink, sw: 2.5, jitter: 1.1 });
+    G.paint(dorsalPts(ph * 0.9), { fill: P.ds, fillOp: 245, ink: P.ink, sw: 2.4, jitter: 1.1 });
 
     // ---- 身体 ----
     const bp = bodyPts(breathe);
-    G.paint(bp, { fill: P.ds, ink: P.ink, sw: 3.4, jitter: 1.25, shadow: P.ink, shadowOp: .09, shadowY: 9 });
+    G.paint(bp, { fill: P.ds, ink: P.ink, sw: 3.0, jitter: 1.2, shadow: P.ink, shadowOp: .09, shadowY: 9 });
     C.save();
     G.tracePts(bp, 1, true);
     C.clip();
-    // ① 一条竖向渐变解决体积：背深 → 侧蓝 → 腹白（不要用两块椭圆糊出硬边）
-    const g = C.createLinearGradient(0, -58, 0, 60);
-    g.addColorStop(0.00, 'rgba(38,52,143,0.86)');
-    g.addColorStop(0.30, 'rgba(77,107,254,0.34)');
-    g.addColorStop(0.54, 'rgba(220,228,255,0.40)');
-    g.addColorStop(1.00, 'rgba(255,249,236,0.86)');
-    C.fillStyle = g; C.fillRect(-118, -72, 240, 155);
-    // ② 腹部的奶油亮面（前端厚一点，符合鲸的体形）
-    G.paint(G.ellPts(26, 40, 64, 28, 24, 1.1), { fill: P.cream, fillOp: 112, jitter: 1 });
-    // ③ 铅笔排线：背脊 / 腹部 —— 参考片的质感签名
+    // ① 竖向渐变：背缘收暗，**中间一大片保持标识蓝**，腹部才转白
+    const g = C.createLinearGradient(0, -62, 0, 64);
+    g.addColorStop(0.00, 'rgba(38,52,143,0.74)');
+    g.addColorStop(0.22, 'rgba(56,84,220,0.36)');
+    g.addColorStop(0.46, 'rgba(77,107,254,0.10)');
+    g.addColorStop(0.72, 'rgba(220,228,255,0.34)');
+    g.addColorStop(1.00, 'rgba(255,249,236,0.72)');
+    C.fillStyle = g; C.fillRect(-124, -76, 250, 162);
+    // ② ★ 白月牙下颌：标识最认得出来的一笔。边缘要利落，所以用实心填充 + 描边
+    G.paint(jawPts(breathe), { fill: P.cream, fillOp: 246, jitter: 1.0 });
+    G.stroke(MOUTH, { ink: P.ink, sw: 2.7, alpha: 225, jitter: .8, smooth: 1 });
+    // ③ 铅笔排线（只留一点点，体积主要交给渐变和白月牙）
     const upP = [], dnP = [];
-    for (const q of bp) { if (q[1] < -4) upP.push(q); else if (q[1] > 4) dnP.push(q); }
-    if (upP.length > 3) G.hatchFill(upP, { d: 14, a: -0.70, color: P.dsDk, alpha: 30, sw: 1.5, rand: 0.45, seed: 3 });
-    if (dnP.length > 3) G.hatchFill(dnP, { d: 12.5, a: -1.02, color: P.dsDk, alpha: 48, sw: 1.3, rand: 0.35, seed: 7 });
-    // ④ 腹部褶（喉褶）：越往里的越短，向吻端收拢
+    for (const q of bp) { if (q[1] < -6) upP.push(q); else if (q[1] > 6) dnP.push(q); }
+    if (upP.length > 3) G.hatchFill(upP, { d: 15, a: -0.70, color: P.dsDk, alpha: 26, sw: 1.5, rand: 0.45, seed: 3 });
+    if (dnP.length > 3) G.hatchFill(dnP, { d: 13, a: -1.02, color: P.dsDk, alpha: 34, sw: 1.3, rand: 0.35, seed: 7 });
+    // ④ 喉褶：裁进白月牙里画（不裁的话会跑到蓝身上，看着像划痕）
+    C.save();
+    G.tracePts(jawPts(breathe), 1, true);
+    C.clip();
     for (let i = 0; i < 4; i++) {
-      const d = 8 + i * 7.7, xa = lerp(56, 26, i / 3), xb = lerp(6, -16, i / 3), pts = [];
-      for (let k = 0; k <= 6; k++) { const x = lerp(xa, xb, k / 6); pts.push([x, bellyY(x) - d]); }
-      G.stroke(pts, { ink: P.ink2, sw: 1.9, alpha: 76, jitter: 1.1, smooth: 1 });
+      const d = 6 + i * 8.0, xa = lerp(66, 34, i / 3), xb = lerp(20, 0, i / 3), pts = [];
+      for (let k = 0; k <= 6; k++) { const x = lerp(xa, xb, k / 6); pts.push([x, lowY(x, 1) - d]); }
+      G.stroke(pts, { ink: P.ink2, sw: 1.7, alpha: 88, jitter: 1.0, smooth: 1 });
     }
-    // ⑤ 吻部亮块 + 嘴线（收在身体埋进去，不要拉成一道横贯身体的裂口）
-    G.paint(G.ellPts(60, 26, 24, 15, 20, 1), { fill: P.dsPale, fillOp: 120, jitter: 1.1 });
-    G.stroke([[80, 7], [66, 16], [48, 22], [31, 21], [21, 14]], { ink: P.ink, sw: 3.0, alpha: 228, jitter: .9, smooth: 1 });
     C.restore();
-    // ⑥ 轮廓线最后画，保证不被明暗糊掉
-    G.paint(bp, { ink: P.ink, sw: 3.4, jitter: 1.25 });
+    C.restore();
+    G.paint(bp, { ink: P.ink, sw: 3.0, jitter: 1.2 });
 
     // ---- 脸 ----
-    eye(t, 30, -14, o.eyeR == null ? 15.5 : o.eyeR, mood, o.blink || 0);
-    // 腮红：挪到眼下的颊部，先两片软色块晕开，再压三道斜线（一眼认得出是腮红而不是淤青）
+    eye(t, 32, -16, o.eyeR == null ? 11 : o.eyeR, mood, o.blink || 0);
     const bA = o.blush == null ? 105 : o.blush;
     if (bA > 4) {
       for (let i = 0; i < 3; i++) {
-        const k = i / 2;                                   // 三层同心色块 → 边缘自然衰减
-        G.paint(G.ellPts(18, 1, 17 - k * 5, 10 - k * 3, 20, 1.1 + k), { fill: P.coral, fillOp: bA * 0.16, jitter: 1.3 });
+        const k = i / 2;
+        G.paint(G.ellPts(22, -4, 15 - k * 5, 9 - k * 3, 20, 1.1 + k), { fill: P.coral, fillOp: bA * 0.15, jitter: 1.3 });
       }
       for (let i = 0; i < 3; i++) {
-        const bx = 11 + i * 7;
-        G.stroke([[bx - 2.5, 5], [bx + 2.5, -1]], { ink: P.coral, sw: 1.9, alpha: bA * 0.42, jitter: .4, smooth: 0 });
+        const bx = 15 + i * 7;
+        G.stroke([[bx - 2.5, 0], [bx + 2.5, -6]], { ink: P.coral, sw: 1.8, alpha: bA * 0.40, jitter: .4, smooth: 0 });
       }
     }
-    // 喷水孔：头顶偏后，先一块浅色隆起再压一条暗缝
-    G.paint(G.ellPts(21, -47, 10, 5, 14, .8, -0.16), { fill: P.dsMid, fillOp: 130, jitter: .7 });
-    G.paint(G.ellPts(21, -48, 6.5, 2.6, 12, .6, -0.16), { fill: P.ink, fillOp: 165, jitter: .5 });
+    // 喷水孔：头顶偏后
+    G.paint(G.ellPts(20, -53, 10, 5, 14, .8, -0.16), { fill: P.dsMid, fillOp: 130, jitter: .7 });
+    G.paint(G.ellPts(20, -54, 6.5, 2.6, 12, .6, -0.16), { fill: P.ink, fillOp: 165, jitter: .5 });
 
-    // ---- 近侧胸鳍（盖在身体前）----
-    G.paint(flipperPts(ph * 1.7 + 0.7, false), { fill: P.dsMid, fillOp: 242, grad: [74, 20, P.dsLt, P.dsMid], gradOp: 210, ink: P.ink, sw: 2.5, jitter: 1.2 });
+    // ---- 近侧胸鳍 ----
+    G.paint(flipperPts(ph * 1.7 + 0.7, false), { fill: P.dsMid, fillOp: 245, grad: [82, 26, P.dsLt, P.dsMid], gradOp: 200, ink: P.ink, sw: 2.4, jitter: 1.2 });
 
     // ---- 喷水 ----
-    if (o.spout) spout(t, o.spout, 20, -50);
+    if (o.spout) spout(t, o.spout, 20, -56);
 
     C.restore();
 
-    if (o.emote) G.emote(o.emote, x + dir * 108 * s, y - 96 * s, s, t, o.emoteO);
+    if (o.emote) G.emote(o.emote, x + dir * 104 * s, y - 104 * s, s, t, o.emoteO);
   };
 
   // ======================= 情绪符号 =======================

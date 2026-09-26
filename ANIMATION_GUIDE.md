@@ -198,7 +198,7 @@ G.whale(t, x, y, 尺寸, {
   dir: 1,          // +1 头朝右 / -1 头朝左（整体镜像）
   tilt: 0, mood: 'idle',   // idle|happy|sing|wow|dizzy|heart|sleep|wink
   squash: 1, stretch: 1, blink: 0,
-  spout: 0, aura: 0, alpha: 255, blush: 105, eyeR: 15.5,
+  spout: 0, aura: 0, alpha: 255, blush: 105, eyeR: 11,
   tailSpeed: 2.6, tailL: 100, tailS: 30, wave: 18,
   emote: 'note',   // note|heart|spark|star5|excl|q|sweat|zzz
   emoteO: { pop: 1, alpha: 255, color }
@@ -216,8 +216,9 @@ G.emote(kind, x, y, s, t, o)   // 单独画情绪符号
 |---|---|
 | `CAPX / CAPRX / CAPRY` | 吻端半椭圆 —— **钝头**靠它，不是把身体拉圆 |
 | `TAILX / TAILH` | 尾柄位置与半高（要**细**，尾鳍才显得大） |
-| `TOP / BOT` | 背缘 / 腹缘的半高关键帧，`u: 0=吻后 1=尾柄`；峰值放在 `u≈0.26` |
-| `FX / FY`、`ANG_UP / ANG_DN` | 尾鳍根部（要**藏进身体里**，两叶的中缝才看不见）与两叶张角 |
+| `TOP / BOT` | 背缘 / 腹缘的半高关键帧，`u: 0=吻后 1=尾柄`；峰值放在 `u≈0.28`，而且**不比头更高**（头是最宽的地方，这才"敦实"） |
+| `FX / FY`、`ANG_UP / ANG_DN` | 尾鳍根部（要**藏进身体里**，两叶的中缝才看不见）与两叶张角；本片两叶都在轴线上方 —— 尾巴整体上钩 |
+| `MOUTH` | 下颌白月牙的**上缘（嘴线）**；下缘用 `lowY(x)` 取身体腹线，两条线在吻端与喉部各交于一点，月牙两头才是尖的 |
 
 `bodyPts()` 生成的是一条**角度单调**的闭合轮廓，所以按 `y` 取子集就是一段连续弧，
 可以直接喂给 `hatchFill()` 做"只给背 / 腹排线"——见第 8 章坑 16。
