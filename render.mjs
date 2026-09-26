@@ -116,7 +116,22 @@ async function openPage(tag = '', query = '?render=1&bare=1') {
   }
   throw last;
 }
-function shutdown() { for (const c of spawned) { try { c.kill(); } catch (e) { } } }
+// 关掉无头 Chrome 并清掉它的临时 profile（一次渲染会留下几十 MB）。
+// 不能 kill 完就删：Windows 上文件还被占着，rmSync 会静默失败 —— 必须等子进程真的退出。
+async function shutdown() {
+  await Promise.all(spawned.map(c => new Promise(res => {
+    if (c.exitCode !== null || c.signalCode) return res();
+    c.once('exit', res);
+    try { c.kill(); } catch (e) { res(); return; }
+    setTimeout(res, 3000);                    // 兜底：最多等 3 秒
+  })));
+  try {
+    const od = join(ROOT, 'out');
+    if (existsSync(od)) for (const d of readdirSync(od)) {
+      if (d.startsWith('.chrome-')) { try { rmSync(join(od, d), { recursive: true, force: true }); } catch (e) { } }
+    }
+  } catch (e) { }
+}
 
 const framePath = (dir, i) => join(dir, 'f' + String(i).padStart(5, '0') + '.jpg');
 const b64 = url => Buffer.from(url.slice(url.indexOf(',') + 1), 'base64');
@@ -161,7 +176,7 @@ if (mode === 'dumpdemo') {
   const bytes = Buffer.from(b64, 'base64');
   writeFileSync(out, bytes);
   console.log('示范音轨已导出 → ' + out + '  (' + (bytes.length / 1048576).toFixed(1) + ' MB)');
-  c.close(); shutdown(); process.exit(0);
+  c.close(); await shutdown(); process.exit(0);
 }
 
 if (mode === 'selftest') {
@@ -176,7 +191,7 @@ if (mode === 'selftest') {
   console.log('shots: ' + shots + '   page errors: ' + (errs || '(none)'));
   console.log('status: ' + st);
   console.log('timeline: ' + dur + ' s    demo buffer: ' + bt + ' s / ' + bl + ' samples');
-  c.close(); shutdown(); process.exit(0);
+  c.close(); await shutdown(); process.exit(0);
 }
 
 if (mode === 'rig') {
@@ -188,7 +203,7 @@ if (mode === 'rig') {
   const r = await c.eval('window.renderRig({ t: ' + (isFinite(t) ? t : 0) + ' })');
   writeFileSync(out, b64(r.url));
   console.log(out);
-  c.close(); shutdown(); process.exit(0);
+  c.close(); await shutdown(); process.exit(0);
 }
 
 if (mode === 'stills') {
@@ -204,7 +219,7 @@ if (mode === 'stills') {
     writeFileSync(f, buf);
     console.log('  ' + f + '  ' + (Date.now() - t0) + ' ms');
   }
-  c.close(); shutdown(); process.exit(0);
+  c.close(); await shutdown(); process.exit(0);
 }
 
 if (mode === 'sheet') {
@@ -215,7 +230,7 @@ if (mode === 'sheet') {
   const r = await c.eval('window.renderSheet(' + JSON.stringify(times) + ',' + num(args.cols, 3) + ',' + num(args.w, 520) + ')');
   writeFileSync(out, b64(r.url));
   console.log(out + '   每帧耗时(ms): ' + r.ms.join(' '));
-  c.close(); shutdown(); process.exit(0);
+  c.close(); await shutdown(); process.exit(0);
 }
 
 async function paintRange(t0, t1, dir, workers) {
@@ -251,7 +266,7 @@ if (mode === 'frames') {
   const dir = resolve(ROOT, args.out || 'out/frames');
   await paintRange(Number(a) || 0, b === undefined ? Number(a) + 10 : Number(b), dir, num(args.workers, 4));
   console.log('帧序列已写好：' + dir + '   （接着跑：node render.mjs --encode --audio=<你的BGM>）');
-  shutdown(); process.exit(0);
+  await shutdown(); process.exit(0);
 }
 
 if (mode === 'clip') {
@@ -269,5 +284,5 @@ if (mode === 'clip') {
   console.log('编码 → ' + out);
   await run('ffmpeg', fa);
   console.log('完成 ' + out);
-  shutdown(); process.exit(0);
+  await shutdown(); process.exit(0);
 }
