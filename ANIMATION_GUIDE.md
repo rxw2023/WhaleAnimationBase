@@ -195,6 +195,7 @@ G.whale(t, x, y, 尺寸, {
   paint: 1,        // 0=纯铅笔稿  1=完成上色  中间值=正在被画出来
   sketch: 0,       // 起稿辅助线的强度（辅助椭圆+中心线+定位点）
   ground: 0,       // 地面排线投影
+  pose: null,      // 'curl' = 标识原姿势（蜷成一团）；只用于标题 / 封面这类静态场合
   dir: 1,          // +1 头朝右 / -1 头朝左（整体镜像）
   tilt: 0, mood: 'idle',   // idle|happy|sing|wow|dizzy|heart|sleep|wink
   squash: 1, stretch: 1, blink: 0,

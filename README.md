@@ -102,8 +102,18 @@ pos(i, t) = form[形态A](i, t) × (1 − k) + form[形态B](i, t) × k
 尾鳍张角），白月牙的嘴线是 `MOUTH`，五官坐标在 `G.whale` 里，
 尾叶与胸鳍共用 `lobePts()` —— 一个"沿脊椎线扫出宽叶"的生成器。
 
+**另一个姿势：`pose: 'curl'`。** 标识原本就是那个姿势 —— 鲸鱼蜷成一团。片子里用不上
+（它要游），但做标题 / 封面时那才是"一眼认出"的一版：脊椎是一条圆弧、头厚尾细，
+白月牙填在洞口的里侧。姿势表的最后两格就是它。
+
+**喷水只在"海里"的幕出现**（海洋 + 上浮）。太空里没有水可喷。
+闸门取的是当前形态权重 `WTS[F_SEA] + WTS[F_UPWELL]`，所以进出水是自动淡入淡出的，
+不用手写时间区间 —— 改幕表也不会忘掉它。
+
+![character sheet](docs/rig.jpg)
+
 ```bash
-node render.mjs --rig --out=out/rig.jpg     # 角色标准姿势表：铅笔稿 / 半上色 / 完成稿 / 表情
+node render.mjs --rig --out=out/rig.jpg     # 角色标准姿势表：铅笔稿 / 半上色 / 完成稿 / 表情 / 标识原姿势
 ```
 
 ---
@@ -219,7 +229,8 @@ WhaleAnimationBase/
 ├── docs/                 # README 配图
 │   ├── hero.jpg
 │   ├── morph.jpg
-│   └── sheet.jpg
+│   ├── sheet.jpg
+│   └── rig.jpg           # 角色标准姿势表（--rig 的产物）
 ├── assets/               # 用户自备音乐（已被 .gitignore 排除）
 │   └── README.txt
 ├── out/                  # 渲染产物（已被 .gitignore 排除）

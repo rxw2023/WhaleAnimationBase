@@ -1027,11 +1027,12 @@
       const s = trailSample(trailGrow(t));
       wx = lerp(wx, s[0] + 24, tw); wy = lerp(wy, s[1] - 30, tw);
     }
-    // 吐水节奏放慢：每 2 小节喷一次，缓慢升起再缓慢散掉。
-    // 原来是每一拍喷一次（约 1.7 次/秒），看着像在抽搐。
+    // 吐水：**只在"海里"的幕出现**（海洋 + 上浮）。太空里没有水可喷。
+    // 闸门取当前形态权重，所以进出水是自动淡入淡出的，不用手写时间区间。
+    const wet = clamp(WTS[F_SEA] + WTS[F_UPWELL]);
+    // 节奏：每 2 小节一次，缓慢升起再缓慢散掉（原来是每一拍一次，约 1.7 次/秒，像在抽搐）
     const spc = G.bar() * 2, sph = G.frac((t - 1.4) / spc);
-    let spout = sph < 0.46 ? Math.sin(sph / 0.46 * Math.PI) * 1.15 : 0;
-    if (t > 8.6 && t < 9.9) spout = Math.max(spout, 0.5 * Math.sin(G.seg(t, 8.6, 9.9) * Math.PI));  // 弧顶再喷一口
+    const spout = (sph < 0.46 ? Math.sin(sph / 0.46 * Math.PI) * 1.15 : 0) * wet;
     const def = breachDeform(t);
     // 上浮段摆尾加速（用平滑斜坡，尾相位才连续；直接跳会看到尾巴瞬移）
     const tailFast = 2.6 + 1.1 * Math.min(G.seg(t, 4.0, 4.8), 1 - G.seg(t, 7.6, 8.4));
