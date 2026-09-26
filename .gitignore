@@ -7,7 +7,7 @@ out/
 
 # ── 商业音乐：请勿提交。自行准备 assets/bgm.mp3，切段产物同理 ──
 assets/bgm.mp3
-assets/bgm-45s.m4a
+assets/bgm-*.m4a
 assets/*.wav
 
 # ── 系统 / 编辑器 ──

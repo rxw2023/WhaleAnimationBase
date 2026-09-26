@@ -288,8 +288,9 @@ window.__errs                           // 全局错误收集（自检会打印�
 ### 5.1 时间轴 = 一串锚点
 
 ```js
-const KEYS = [ [0.0, F_SEA], [2.6, F_SEA], [4.6, F_NEURON], ... ];
-// 每段之间：保持 30% → 形变 40% → 保持 30%
+// 17 幕 / 26 小节。每一幕给一对锚点：[进入时刻, 保持结束时刻]
+const KEYS = [ [0.0000, F_SEA], [2.9126, F_SEA], [4.4272, F_UPWELL], [6.1748, F_UPWELL], ... ];
+// 两对之间：保持 30% → 形变 40% → 保持 30%
 let _wa, _wb, _wk;   // 当前形态 / 下一形态 / 混合系数
 function weightsAt(t) { ... _wa = a; _wb = b; _wk = ease(clamp((u-0.30)/0.40)); ... }
 const WTS = new Array(NF);   // 每一幕的权重（幕内道具按它决定画不画、多亮）
@@ -307,7 +308,8 @@ for (let j = 0; j < 9; j++) O9[j] = A9[j] + (B9[j] - A9[j]) * _wk;   // 逐个�
 
 ### 5.3 加一幕的完整步骤（照抄这个清单）
 
-1. **起名编号**：`const F_MYSCENE = 12, NF = 14;`（记得改 `NF`，`WTS` 靠它分配）
+1. **起名编号**：`const F_MYSCENE = 16, NF = 18;`（记得改 `NF`，`WTS` 靠它分配；
+   本片是 F_TRAIL = 15、NF = 16）
 2. **加锚点**：在 `KEYS` 里插 `[t_in, F_MYSCENE], [t_out, F_MYSCENE],`（前后各留一段做形变）
 3. **写粒子形态**：在 `form(k, i, t, o)` 里加 `case F_MYSCENE:`
    - `o[0],o[1]` = 位置
@@ -344,7 +346,7 @@ G.T.dur = G.barT(G.T.len);             // = 21 × (60/100×4) = 50.4 秒
 **不要凭感觉填 BPM。** 用内置分析器实测：
 
 ```bash
-node analyze_bgm.mjs assets/bgm.mp3 --target=45
+node analyze_bgm.mjs assets/bgm.mp3 --target=60
 ```
 
 输出：**BPM（BPM×相位联合精修到 0.01）** · **第一拍时刻** · **小节重拍** ·
@@ -355,18 +357,25 @@ node analyze_bgm.mjs assets/bgm.mp3 --target=45
 
 实测《Something Just Like This》：`103.00 BPM`，第一拍 `0.412s`，每小节 `2.330s`。
 
-**选段原则：让片子最贵的那一幕落在副歌上。**
-本片高潮是「黑洞」（片内 30.5s），起点取 **第 8 小节线 = 19.0528s**
-→ 黑洞落在歌曲 49.55s（副歌起点），片尾落在 64.05s（副歌高潮）。
+**选段原则：让片子最贵的那一幕落在副歌上，而且起点必须落在小节线上。**
+原曲的小节线 = `0.412 + n × 2.3301`。本片高潮是「黑洞」（片内 41.9s），
+起点取 **第 9 小节线 = 21.3829s** → 黑洞落在歌曲 63.3s（副歌摔下来的那一下），
+片尾落在 82.0s（副歌后半）。**切完一定要复核**：分析器给出第一拍 `0.017s` ⇒ `G.T.off = 0` 成立。
+
+> ⚠️ 不要用"看起来差不多"的秒数。上一版切在 20.5318s（肉眼像小节线），复核后发现
+> 片内第一个拍点在 **0.267s** —— 整片节拍网格偏了将近半拍，而画面本身完全看不出来，
+> 只有时空网格那一幕的拍点波纹会隐约不对劲。
 
 ```bash
 # 按小节线切一段；起点是小节线 ⇒ 片内 t=0 就是重拍 ⇒ G.T.off = 0
-ffmpeg -y -ss 19.0528 -i assets/bgm.mp3 -t 45 \
-  -af "afade=t=out:st=43.4:d=1.6" -c:a aac -b:a 256k assets/bgm-45s.m4a
+ffmpeg -y -ss 21.3829 -i assets/bgm.mp3 -t 60.6 \
+  -af "afade=t=out:st=59.0:d=1.6" -c:a aac -b:a 192k assets/bgm-60s.m4a
 ```
 
 小节数 = `时长 / (60/BPM×4)`，**可以是小数**（main.js 已支持）。
-浏览器端 `file://` 读不了本地音频：要通过 http 打开才会自动载入 `assets/bgm-45s.m4a`，
+本片用 **26 小节 = 60.5825s**：整数小节的好处是结尾正好落在重拍上；
+`-t 60.6` 多出的 0.017s 是为了凑满 30fps 的整帧数（1818 帧），不是音乐需要。
+浏览器端 `file://` 读不了本地音频：要通过 http 打开才会自动载入 `assets/bgm-60s.m4a`，
 否则手动点「载入我的 BGM…」。
 
 ---
@@ -383,7 +392,7 @@ node render.mjs --rig --out=out/rig.jpg                                         
 node render.mjs --clip=25:32 --fps=30 --audio=out/demo.wav --workers=4 --out=out/clip.mp4
 
 # ★ 整片（推荐流程）
-node render.mjs --frames=0:45 --fps=30 --workers=5 --out=out/frames   # 逐帧，可断点续传
+node render.mjs --frames=0:60.6 --fps=30 --workers=4 --out=out/frames  # 逐帧，可断点续传
 node render.mjs --encode --fps=30 --audio=out/demo.wav --out=out/film.mp4
 node render.mjs --encode --fps=30 --audio=assets/bgm.mp3 --audio-offset=19.0528 --out=out/film.mp4   # 不切文件也能从指定位置取音
 ```
@@ -511,6 +520,29 @@ if (showOutline > 0.02) G.paint(polyPts, { ink: ..., inkOp: 170 * clamp(showOutl
 都排上线——而且**不报错，只是画错**。
 **自检**：把过滤出的点连成折线看一眼，它应该沿边界走一段，而不是横跨形状的一条弦。
 
+### ⚠️ 坑 17：用 `t` 线性累加的位移，在长片里会把画面"漂空"
+
+海里的浮游物原本是这么写的：
+
+```js
+o[1] = baseY - t * (5 + 13 * deep);        // 越漂越往下
+```
+
+45 秒的版本没人看出来。拉到 60 秒之后，片尾回到海里的那一幕明显**变稀了** ——
+浮游物已经漂出画面下沿，而画布外的东西不会自己回来。于是"首尾同框"露馅：
+开头是满的，结尾是空的。
+
+**修**：改成取余绕回，密度就恒定了：
+
+```js
+const y0 = G.frac(r3(i, 11) - t * (5 + 13 * deep) / (H * 1.10));
+o[1] = H * 0.02 + y0 * H * 1.10;
+```
+
+**推广**：任何形如 `f(t)` 且值域有界的元素（漂移、旋转、相位），只要片子长到某一幕
+会在片头片尾各出现一次，就必须检查它有没有跑出界。取余比"把速度调小"稳，因为
+速度再小，只要片子够长一样会漂走。
+
 ---
 
 ## 9 · 性能与参数速查
@@ -522,7 +554,7 @@ if (showOutline > 0.02) G.paint(polyPts, { ink: ..., inkOp: 170 * clamp(showOutl
 | 群飞 | 一次成路径，1500~2200 只几乎不掉帧 |
 | 叶序 | 900 点批量 `fill`（3 次 fill，不是 900 次） |
 | 单帧渲染 | 全分辨率 JPEG 约 0.25–0.45 s/帧/worker |
-| 整片 | 1350 帧 @ 5 workers ≈ 7 分钟；ffmpeg 编码 ≈ 2 分钟 |
+| 整片 | 1818 帧 @ 4 workers ≈ 4 分钟；ffmpeg 编码 ≈ 3.5 分钟 |
 | 联络表 | 缩略图尺寸下每帧只要 2–10 ms（审片用它，别用 stills） |
 
 **优化顺序**：先降 `N` → 再降 `GRID` → 最后才考虑降分辨率。

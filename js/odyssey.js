@@ -1,11 +1,17 @@
-// odyssey.js — 《小鲸鱼 · 一直在游》45 秒全程序化动画
+// odyssey.js — 《小鲸鱼 · 一直在游》60.6 秒全程序化动画（17 幕 / 26 小节）
+//
+// 剧情线：从海里出发 → 破水面 → 一路所见（光 / 网 / 波 / 花）→ 离地 → 太阳系 → 星系
+//         → 时空 → 黑洞 → 隧道 → 地出 → 星图 → 回到海里（首尾同框，可以循环）
 //
 // 结构：不做"一场一场画"，而是让同一批粒子在时间里重组成不同形态。
-//   A 粒子场(1400) : 海洋浮游 → 神经元 → 光谱扇 → 双缝波前 → 同心环 → 葵花籽 → 行星轨道
-//                    → 星系 → 时空网格 → 吸积盘 → 隧道环 → 地球云 → 回到海洋
-//   B 线(56点)     : 海面 → 树突 → 光束 → 正弦波 → 圆弧 → 花茎 → 椭圆轨道 → 旋臂
-//                    → 被弯折的光线 → 吸积盘缘 → 垂直光柱 → 月面地平线 → 海面
-//   C 小鲸鱼       : 从头到尾都在，只是越游越小、越游越远，最后又游回来
+//   A 粒子场(1400) : 海洋浮游 → 上升气泡柱 → 水花炸开成星 → 光谱扇 → 神经元 → 双缝波前
+//                    → 同心环 → 葵花籽 → 花盘收缩成地球 → 行星轨道 → 星系 → 时空网格
+//                    → 吸积盘 → 隧道环 → 地球云 → 星图航线 → 回到海洋
+//   B 线(56点)     : 海面 → 上浮的螺旋 → 跃出弧 → 光束 → 树突 → 正弦波 → 圆弧 → 花茎
+//                    → 地球圆 → 椭圆轨道 → 旋臂 → 被弯折的光线 → 吸积盘缘 → 垂直光柱
+//                    → 月面地平线 → 航线 → 海面
+//   C 小鲸鱼       : 全片都在。上浮时加速摆尾、破水面时拉伸跃出、越游越小、
+//                    最后掉头游出画面 —— 而首尾的相机与配色完全一致，所以它可以重新开始
 // 粒子的位置是两种形态的加权混合，所以粒子是真的"飞"过去，不是叠化；全片没有切点。
 (function (G) {
   'use strict';
@@ -14,22 +20,27 @@
 
   G.CONFIG = { captions: true, grain: true, vignette: true };
   // 字幕时间已按幕表对齐（每句都落在对应那一幕上）
+  // 字幕：除首尾两句书挡外，全部改成第一人称（它想去哪 / 它看见了什么）
   G.LYRICS = [
-    [0.50, '海 是 第一张 纸', 2.6],
-    [4.90, '世界 是一张 网', 2.4],
-    [8.60, '光 有 七种 颜色', 2.4],
-    [12.00, '两 道 波 相遇 会 唱歌', 2.4],
-    [15.20, '圆 转起来 就 开花', 2.4],
-    [21.10, '谁 绕着 谁 转', 2.3],
-    [24.30, '花心 是 另一座 星系', 2.3],
-    [27.90, '引力 把 空间 压出 一个 坑', 2.6],
-    [31.10, '时间 在这里 变慢', 2.3],
-    [34.90, '穿 过 去', 2.2],
-    [38.30, '隧道 尽头 有光', 1.9],
-    [40.30, '回头看 家 是一颗 蓝色的球', 2.5],
-    [42.70, '所以 继续 游', 2.3],
+    [0.60, '海 是 第一张 纸', 2.1],
+    [4.85, '往 上 是 唯一 的 方向', 1.4],
+    [8.90, '冲 出 去', 1.5],
+    [12.35, '我 第一次 看见 颜色', 1.3],
+    [15.40, '每 一 根 线 都 在 说话', 1.3],
+    [18.40, '两 道 波 相遇 会 唱歌', 1.3],
+    [21.45, '圆 转起来 就 开花', 1.3],
+    [24.50, '连 花 都 在 数 数', 1.5],
+    [27.90, '家 只 是 一颗 球', 1.9],
+    [32.15, '谁 绕着 谁 转', 1.4],
+    [35.45, '花心 是 另一座 星系', 1.6],
+    [38.90, '引力 把 空间 压出 一个 坑', 1.5],
+    [42.20, '时间 在这里 变慢', 1.6],
+    [45.70, '穿 过 去', 1.4],
+    [48.95, '回头看 家 是一颗 蓝色的球', 1.9],
+    [52.70, '我 走 过 的 路 连成 了 星图', 2.0],
+    [56.70, '还 是 第一张 纸', 2.4],
   ];
-  const DUR = 45;
+  const DUR = 26 * 60 / 103 * 4;      // 26 小节 × 2.3301 s ≈ 60.5825 s
 
   const N = 1400, NBEAM = 56;
   const r1 = (i, s) => G.hash(i * 1.70 + s);
@@ -37,22 +48,29 @@
   const r3 = (i, s) => G.hash(i * 5.77 + s * 13.13);
 
   const F_SEA = 0, F_NEURON = 1, F_SPECTRUM = 2, F_WAVE = 3, F_RINGS = 4, F_FLOWER = 5,
-        F_ORBIT = 6, F_GALAXY = 7, F_SPACETIME = 8, F_BH = 9, F_TUNNEL = 10, F_EARTH = 11, NF = 12;
+        F_ORBIT = 6, F_GALAXY = 7, F_SPACETIME = 8, F_BH = 9, F_TUNNEL = 10, F_EARTH = 11,
+        F_UPWELL = 12, F_BREACH = 13, F_LIFTOFF = 14, F_TRAIL = 15, NF = 16;
 
+  // 17 幕 / 26 小节。每对 = [进入, 保持结束]；两对之间是形变窗口（30% 保持 / 40% 变形 / 30% 保持）。
+  // 按"小节"排（×2.3301 s），这样每次形变都尽量落在拍上。
   const KEYS = [
-    [0.0, F_SEA], [2.6, F_SEA],
-    [4.6, F_NEURON], [6.4, F_NEURON],
-    [8.4, F_SPECTRUM], [9.8, F_SPECTRUM],
-    [11.8, F_WAVE], [13.4, F_WAVE],
-    [15.0, F_RINGS], [16.2, F_RINGS],
-    [17.8, F_FLOWER], [19.6, F_FLOWER],
-    [21.2, F_ORBIT], [22.8, F_ORBIT],
-    [24.4, F_GALAXY], [26.4, F_GALAXY],
-    [28.0, F_SPACETIME], [29.6, F_SPACETIME],
-    [31.2, F_BH], [33.4, F_BH],
-    [35.0, F_TUNNEL], [36.8, F_TUNNEL],
-    [38.4, F_EARTH], [40.6, F_EARTH],
-    [42.2, F_SEA], [45.0, F_SEA],
+    [0.0000, F_SEA],       [2.9126, F_SEA],
+    [4.4272, F_UPWELL],    [6.1748, F_UPWELL],
+    [7.6893, F_BREACH],    [10.3689, F_BREACH],      // ★ 破水面
+    [12.1165, F_SPECTRUM], [13.6311, F_SPECTRUM],
+    [15.1456, F_NEURON],   [16.6602, F_NEURON],
+    [18.1748, F_WAVE],     [19.6893, F_WAVE],
+    [21.2039, F_RINGS],    [22.7184, F_RINGS],
+    [24.2330, F_FLOWER],   [25.9806, F_FLOWER],
+    [27.4951, F_LIFTOFF],  [30.1748, F_LIFTOFF],     // ★ 离地（花盘收缩成地球）
+    [31.9223, F_ORBIT],    [33.6699, F_ORBIT],
+    [35.1845, F_GALAXY],   [37.1650, F_GALAXY],
+    [38.6796, F_SPACETIME], [40.4272, F_SPACETIME],
+    [41.9417, F_BH],       [43.9223, F_BH],
+    [45.4369, F_TUNNEL],   [47.1845, F_TUNNEL],
+    [48.6990, F_EARTH],    [50.9126, F_EARTH],
+    [52.4272, F_TRAIL],    [54.8738, F_TRAIL],       // ★ 星图航线
+    [56.3884, F_SEA],      [60.5825, F_SEA],
   ];
   G.SHOTS_BARS = KEYS.map(k => [k[0], null]);
 
@@ -79,15 +97,18 @@
     return WTS;
   }
 
+  // 相机：破水面时跟着向上甩一下、离地时大幅拉远；最后回到首帧的取景（首尾同框）
   const CAMK = [
-    [0.0, 960, 600, 0.94, -0.010], [4.4, 1000, 580, 1.06, 0.005],
-    [6.4, 950, 560, 1.10, -0.010], [8.6, 1030, 560, 1.18, 0.010],
-    [11.8, 960, 550, 1.10, -0.010], [15.0, 960, 540, 1.22, 0.010],
-    [17.8, 960, 545, 1.06, -0.010], [21.2, 960, 540, 1.16, 0.005],
-    [24.4, 960, 540, 1.30, 0.000], [28.0, 960, 545, 1.14, -0.010],
-    [31.2, 960, 540, 1.40, 0.010], [35.0, 960, 540, 1.26, 0.000],
-    [38.4, 960, 545, 1.06, -0.010], [42.2, 960, 580, 0.98, 0.005],
-    [45.0, 900, 600, 0.92, -0.010],
+    [0.00, 960, 600, 0.94, -0.010], [4.20, 1000, 580, 1.06, 0.005],
+    [7.60, 960, 620, 1.12, -0.015], [9.20, 940, 470, 1.20, -0.020],
+    [12.00, 960, 560, 1.08, 0.010], [15.10, 960, 550, 1.16, -0.010],
+    [18.10, 960, 540, 1.22, 0.010], [21.20, 960, 545, 1.10, -0.010],
+    [24.20, 960, 540, 1.14, 0.005], [27.50, 960, 540, 1.36, 0.000],
+    [31.90, 960, 540, 1.00, 0.005], [35.20, 960, 540, 1.30, 0.000],
+    [38.70, 960, 545, 1.14, -0.010], [41.90, 960, 540, 1.42, 0.010],
+    [45.40, 960, 540, 1.26, 0.000], [48.70, 960, 545, 1.06, -0.010],
+    [52.40, 900, 600, 0.96, -0.005], [56.40, 960, 580, 0.98, 0.005],
+    [60.5825, 960, 600, 0.94, -0.010],
   ];
   function camAt(t) {
     if (t <= CAMK[0][0]) { const c = CAMK[0]; return { cx: c[1], cy: c[2], zoom: c[3], rot: c[4] }; }
@@ -102,17 +123,20 @@
   }
 
   const hx = h => [parseInt(h.slice(1, 3), 16), parseInt(h.slice(3, 5), 16), parseInt(h.slice(5, 7), 16)];
+  // 背景：青绿的海 → 上浮更亮 → 破水面的水面霞光 → 深空 → 金黄的花 → 地球蓝 → 黑洞 → 回到海
   const BGK = [
-    [0.0, '#BEE7E2', '#0E3F70'], [2.6, '#B2E0E4', '#0C3866'],
-    [5.0, '#123063', '#081430'], [7.6, '#0D1A3C', '#05070F'],
-    [8.2, '#FFFFFF', '#E6EDFF'], [8.9, '#171038', '#070512'],
-    [11.0, '#101A44', '#070A1E'], [13.8, '#1B1740', '#0A0A1C'],
-    [15.4, '#2A1B4A', '#120A22'], [17.4, '#E8B845', '#C1701F'],
-    [21.0, '#3A1E52', '#140B28'], [24.0, '#3A1E52', '#0B1030'],
-    [28.0, '#05070F', '#000104'], [30.6, '#05060E', '#000000'],
-    [35.0, '#04040C', '#000000'], [36.8, '#06121F', '#000000'],
-    [38.4, '#05070F', '#0B1226'], [42.0, '#101A30', '#061428'],
-    [43.0, '#BEE7E2', '#0E3F70'], [45.0, '#BEE7E2', '#0E3F70'],
+    [0.00, '#BEE7E2', '#0E3F70'], [2.30, '#B2E0E4', '#0C3866'],
+    [4.43, '#8FD8DC', '#0A2E5C'], [7.69, '#FFD2A0', '#2A4A86'],
+    [9.60, '#4C6FB0', '#0A1430'], [12.12, '#FFFFFF', '#E6EDFF'],
+    [13.30, '#171038', '#070512'], [15.15, '#0D1A3C', '#05070F'],
+    [18.17, '#101A44', '#070A1E'], [21.20, '#2A1B4A', '#120A22'],
+    [24.23, '#E8B845', '#C1701F'], [27.50, '#7BA8D8', '#0E2A50'],
+    [31.92, '#3A1E52', '#140B28'], [35.18, '#3A1E52', '#0B1030'],
+    [38.68, '#05070F', '#000104'], [41.94, '#05060E', '#000000'],
+    [45.44, '#04040C', '#000000'], [47.60, '#06121F', '#000000'],
+    [48.70, '#05070F', '#0B1226'], [52.43, '#05070F', '#0A1024'],
+    [54.90, '#0E2440', '#07182E'], [56.39, '#101A30', '#061428'],
+    [58.20, '#BEE7E2', '#0E3F70'], [60.5825, '#BEE7E2', '#0E3F70'],
   ];
   const _bg = { top: [190, 231, 226], bot: [14, 63, 112] };
   function bgAt(t) {
@@ -149,6 +173,43 @@
     grow(W * 0.95, H * 0.50, Math.PI + 0.14, 108, 4);
   })();
 
+  // ---------- 星图航线：把"去过的每一幕"连成一条折线 ----------
+  // 每个路标 = [x, y, 颜色]，颜色取自它代表的那一幕
+  const TRAIL_WP = [
+    [70, 770, '#7FD0FF'], [200, 715, '#9FD8FF'], [340, 655, '#DCEAFF'],
+    [480, 600, '#FF6F5E'], [620, 545, '#8FA8FF'], [760, 495, '#6EDCFF'],
+    [900, 460, '#FFC24B'], [1040, 445, '#F5C84E'], [1180, 460, '#5FB6E8'],
+    [1320, 500, '#FFE0A0'], [1460, 555, '#C8D8FF'], [1600, 610, '#9FD4FF'],
+    [1740, 660, '#FF9E5A'], [1855, 715, '#BCD8FF'],
+  ];
+  const TRAIL_SEG = [];
+  (function () {
+    const hx2 = h => [parseInt(h.slice(1, 3), 16), parseInt(h.slice(3, 5), 16), parseInt(h.slice(5, 7), 16)];
+    const M = TRAIL_WP.length, NS = 320;
+    const P = j => TRAIL_WP[Math.max(0, Math.min(M - 1, j))];
+    const cr = (p0, p1, p2, p3, k) => {
+      const k2 = k * k, k3 = k2 * k;
+      return 0.5 * (2 * p1 + (-p0 + p2) * k + (2 * p0 - 5 * p1 + 4 * p2 - p3) * k2 + (-p0 + 3 * p1 - 3 * p2 + p3) * k3);
+    };
+    for (let i = 0; i <= NS; i++) {
+      const u = i / NS * (M - 1);
+      const j = Math.min(M - 2, Math.floor(u)), k = clamp(u - j);
+      const A = P(j - 1), B = P(j), C2 = P(j + 1), D2 = P(j + 2);
+      const ca = hx2(B[2]), cb = hx2(C2[2]);
+      TRAIL_SEG.push([
+        cr(A[0], B[0], C2[0], D2[0], k), cr(A[1], B[1], C2[1], D2[1], k),
+        lerp(ca[0], cb[0], k), lerp(ca[1], cb[1], k), lerp(ca[2], cb[2], k),
+      ]);
+    }
+  })();
+  const trailGrow = t => ease(clamp((t - 52.40) / 3.40));   // 航线"画到哪"：0 → 1
+  function trailSample(u) {
+    const idx = clamp(u) * (TRAIL_SEG.length - 1);
+    const j0 = idx | 0, fj = idx - j0;
+    const s0 = TRAIL_SEG[j0], s1 = TRAIL_SEG[j0 + 1 < TRAIL_SEG.length ? j0 + 1 : j0];
+    return [lerp(s0[0], s1[0], fj), lerp(s0[1], s1[1], fj), s0[2], s0[3], s0[4]];
+  }
+
   const GRID = 36, GN = GRID * GRID;
 
   const A9 = new Float32Array(9), B9 = new Float32Array(9), O9 = new Float32Array(9);
@@ -156,9 +217,11 @@
     switch (k) {
       case F_SEA: {
         const deep = r1(i, 5);
-        const baseY = H * 0.02 + r3(i, 11) * H * 1.10;
+        // 取余绕回：浮游物的密度必须恒定。否则漂了 60 秒之后海会明显变空，
+        // 片尾回到海时和开头不是同一个密度，首尾同框就露馅了。
+        const y0 = G.frac(r3(i, 11) - t * (5 + 13 * deep) / (H * 1.10));
         o[0] = r2(i, 7) * W + Math.sin(t * 0.5 + i * 0.7) * 14;
-        o[1] = baseY - t * (5 + 13 * deep);
+        o[1] = H * 0.02 + y0 * H * 1.10;
         o[2] = 0.02; o[3] = 0;
         o[4] = 1.3 + 3.4 * deep;
         o[5] = 190 + 55 * deep; o[6] = 226 + 26 * deep; o[7] = 255;
@@ -316,6 +379,71 @@
         o[8] = 0.30 + 0.65 * warm;
         return;
       }
+      case F_UPWELL: {
+        // 上升气流：螺旋往上，柱越往上越细、越亮、越稀
+        const u = G.frac(r1(i, 5) + t * 0.055);
+        const ang = r2(i, 7) * TAU + u * 3.6 + t * 0.5;
+        const R = (150 + 330 * G.hash(i * 2.7)) * (1 - 0.58 * u);
+        o[0] = W * 0.5 + Math.cos(ang) * R + Math.sin(u * 7 + i * 0.3) * 14;
+        o[1] = H * 1.06 - u * H * 1.10;
+        o[2] = 0.02; o[3] = 0;
+        o[4] = 1.5 + 3.0 * (1 - u) + 1.2 * G.hash(i * 5.9);
+        const c = 0.30 + 0.70 * u;
+        o[5] = 140 + 115 * c; o[6] = 205 + 50 * c; o[7] = 255;
+        o[8] = (0.14 + 0.66 * c) * Math.min(1, u * 7) * (1 - 0.85 * u * u);
+        return;
+      }
+      case F_BREACH: {
+        // 破水面：水花沿抛物线炸开 → 在弧顶停住 → 变成星星（一个动作同时完成"出海"和"入宙"）
+        const dt = Math.max(0, t - 7.70);
+        const life = clamp(dt / 0.85);
+        const settle = ease(clamp((dt - 0.85) / 1.25));
+        const a = -Math.PI * 0.5 + (r2(i, 11) - 0.5) * 2.05;
+        const v = 420 + 620 * r3(i, 13);
+        const sx = W * 0.5 + Math.cos(a) * v * life * 0.95;
+        const sy = H * 0.72 + Math.sin(a) * v * life + 450 * life * life;
+        o[0] = lerp(sx, W * 0.05 + r1(i, 17) * W * 0.90, settle);
+        o[1] = lerp(sy, H * 0.03 + r2(i, 19) * H * 0.82, settle);
+        const sp = 1 - settle;
+        o[2] = Math.cos(a) * 13 * sp; o[3] = Math.sin(a) * 13 * sp;
+        const tw = 0.60 + 0.40 * G.hash(i * 3.1);
+        o[4] = lerp(1.9 + 3.2 * (1 - life) + 1.3 * G.hash(i * 5.3), 1.6 + 3.0 * G.hash(i * 7.7), settle);
+        o[5] = lerp(196, 235 + 20 * tw, settle);
+        o[6] = lerp(238, 240 + 15 * tw, settle);
+        o[7] = 255;
+        o[8] = lerp(0.88, 0.38 + 0.72 * tw, settle);
+        return;
+      }
+      case F_LIFTOFF: {
+        // 离地：葵花盘收缩成一颗球（地球），球再缩小 —— 我们退远了
+        const lift = ease(clamp((t - 27.60) / 1.25));
+        const outk = ease(clamp((t - 29.45) / 1.05));
+        const kk = (i + 1) / N, GA = 2.399963229728653;
+        const fang = i * GA + t * 0.16, fR = 470 * Math.sqrt(kk);
+        const lat = (r1(i, 61) - 0.5) * 1.9, lon = r2(i, 67) * TAU + t * 0.16;
+        const cs = Math.cos(lat);
+        const X = Math.cos(lon) * cs, Y = Math.sin(lat), Z = Math.sin(lon) * cs;
+        const R0 = 320 * (1 - 0.72 * outk);
+        o[0] = lerp(W * 0.5 + Math.cos(fang) * fR, W * 0.5 + X * R0, lift);
+        o[1] = lerp(H * 0.52 + Math.sin(fang) * fR, H * 0.50 + Y * R0, lift);
+        o[2] = 0.02; o[3] = 0;
+        o[4] = lerp(5.0 + 3.4 * kk, 1.8 + 2.6 * G.hash(i * 3.7), lift) * (1 - 0.30 * outk);
+        const near = clamp(Z * 0.5 + 0.5);
+        o[5] = lerp(255, 120, lift); o[6] = lerp(200, 190, lift); o[7] = lerp(120, 255, lift);
+        o[8] = lerp(0.85, (0.22 + 0.78 * near) * (1 - 0.55 * outk), lift);
+        return;
+      }
+      case F_TRAIL: {
+        // 星图航线：粒子沿着"走过的路"铺开，本身就把探索过程画出来了
+        const s = trailSample(r1(i, 31) * trailGrow(t));
+        o[0] = s[0] + G.hashJit(i, 15);
+        o[1] = s[1] + G.hashJit(i + 31, 15);
+        o[2] = 0.02; o[3] = 0;
+        o[4] = 1.8 + 2.6 * G.hash(i * 5.1);
+        o[5] = s[2]; o[6] = s[3]; o[7] = s[4];
+        o[8] = (0.30 + 0.62 * G.hash(i * 7.3)) * (0.45 + 0.55 * trailGrow(t));
+        return;
+      }
       default: {
         const lat = (r1(i, 61) - 0.5) * 1.9, lon = r2(i, 67) * TAU + t * 0.16;
         const cs = Math.cos(lat);
@@ -386,6 +514,15 @@
       case F_BH: { const a = u * Math.PI * 0.92 + Math.PI * 0.04; out[0] = W * 0.5 + Math.cos(a) * 430; out[1] = H * 0.5 + Math.sin(a) * 430 * 0.26; return; }
       case F_TUNNEL: { out[0] = W * 0.5 + G.jit(1.4); out[1] = -40 + u * (H + 80); return; }
       case F_EARTH: { out[0] = -60 + u * (W + 120); out[1] = H * 0.72 + Math.cos(u * Math.PI) * -34; return; }
+      case F_UPWELL: { const a = u * 3.4 + t * 0.7; out[0] = W * 0.5 + Math.cos(a) * 190 * (1 - u * 0.5); out[1] = H * 1.06 - u * H * 1.12; return; }
+      case F_BREACH: { out[0] = -40 + u * (W + 80); out[1] = H * 0.80 - Math.sin(u * Math.PI) * H * 0.40 + Math.sin(u * 21 + t * 2.1) * 7; return; }
+      case F_LIFTOFF: {
+        const lift = ease(clamp((t - 27.60) / 1.25));
+        const outk = ease(clamp((t - 29.45) / 1.05));
+        const R = lerp(400, 320 * (1 - 0.72 * outk), lift), a = u * TAU;
+        out[0] = W * 0.5 + Math.cos(a) * R; out[1] = H * 0.51 + Math.sin(a) * R; return;
+      }
+      case F_TRAIL: { const s = trailSample(u * trailGrow(t)); out[0] = s[0]; out[1] = s[1]; return; }
       default: { out[0] = -60 + u * (W + 120); out[1] = H * 0.70; return; }
     }
   }
@@ -551,11 +688,122 @@
     C.restore();
   }
 
+  // ---------- 上浮：向上的光柱 + 气泡 ----------
+  function upwellProps(t, w) {
+    const C = G.getCtx();
+    C.save(); C.globalAlpha = C.globalAlpha * w;
+    for (let i = 0; i < 6; i++) {
+      const x = 260 + i * 280 + Math.sin(t * 0.4 + i) * 18;
+      const a = 0.09 + 0.07 * Math.sin(t * 0.7 + i * 1.3);
+      const g = C.createLinearGradient(x, H, x, 0);
+      g.addColorStop(0, 'rgba(200,245,255,0)');
+      g.addColorStop(1, 'rgba(224,250,255,' + a.toFixed(3) + ')');
+      C.fillStyle = g;
+      C.beginPath();
+      C.moveTo(x - 84 + i * 6, H + 10); C.lineTo(x + 84 - i * 6, H + 10);
+      C.lineTo(x + 24, -10); C.lineTo(x - 24, -10);
+      C.closePath(); C.fill();
+    }
+    for (let i = 0; i < 22; i++) {
+      const ph = G.frac(G.hash(i * 3.7) + t * 0.10);
+      const x = W * 0.5 + Math.cos(i * 2.4 + ph * 3.2) * (110 + 320 * G.hash(i * 7.1)) * (1 - 0.6 * ph);
+      G.bubble(t, x, H * 1.04 - ph * H * 1.08, 3 + 9 * G.hash(i * 5.3), { op: 150 * (1 - ph * 0.7), ink: '#EAF8FF' });
+    }
+    C.restore();
+  }
+
+  // ---------- 破水面：水面 + 浪花 → 星星 ----------
+  function breachProps(t, w) {
+    const C = G.getCtx();
+    const dt = Math.max(0, t - 7.70);
+    const settle = ease(clamp((dt - 0.85) / 1.25));
+    const surf = 1 - settle;
+    C.save(); C.globalAlpha = C.globalAlpha * w * surf;
+    const g = C.createLinearGradient(0, H * 0.72, 0, H);
+    g.addColorStop(0, 'rgba(150,220,240,0.50)'); g.addColorStop(1, 'rgba(6,26,52,0.92)');
+    C.fillStyle = g;
+    C.beginPath(); C.moveTo(-20, H + 20); C.lineTo(-20, H * 0.74);
+    for (let i = 0; i <= 44; i++) {
+      const x = -20 + i * (W + 40) / 44;
+      C.lineTo(x, H * 0.72 + Math.sin(x * 0.012 + t * 1.6) * 9 + G.jit(3));
+    }
+    C.lineTo(W + 20, H + 20); C.closePath(); C.fill();
+    C.restore();
+    const life = clamp(dt / 0.85);
+    for (let i = 0; i < 30; i++) {
+      const a = -Math.PI * 0.5 + (G.hash(i * 2.9) - 0.5) * 1.9;
+      const v = 400 + 520 * G.hash(i * 4.3);
+      const x = W * 0.5 + Math.cos(a) * v * life * 0.9;
+      const y = H * 0.72 + Math.sin(a) * v * life + 450 * life * life;
+      G.dot(x, y, (3 + 7 * G.hash(i * 6.1)) * (1 - 0.45 * settle), '#F2FBFF', 195 * surf * w);
+    }
+    G.starfield(t, 200, '#EAF2FF', 175 * settle * w);
+  }
+
+  // ---------- 离地：地球缩小（与片尾"地出"共用同一个 drawEarth）----------
+  function liftoffProps(t, w) {
+    const lift = ease(clamp((t - 27.60) / 1.25));
+    const outk = ease(clamp((t - 29.45) / 1.05));
+    const R = lerp(300, 320 * (1 - 0.72 * outk), lift);
+    G.starfield(t, 200, '#DCE8FF', 110 * w);
+    drawEarth(W * 0.5, H * 0.50, R, t, w * (0.30 + 0.70 * lift));
+  }
+
+  // ---------- 星图航线：航线 + 每一幕留下的路标 ----------
+  function trailProps(t, w) {
+    const C = G.getCtx();
+    const grow = trailGrow(t);
+    const n = Math.max(2, Math.round((TRAIL_SEG.length - 1) * grow));
+    const pts = [];
+    for (let i = 0; i <= n; i++) pts.push([TRAIL_SEG[i][0], TRAIL_SEG[i][1]]);
+    C.save(); C.globalAlpha = C.globalAlpha * w;
+    G.stroke(pts, { ink: 'rgba(120,180,255,0.55)', sw: 16, alpha: 55, jitter: 2.6, smooth: 1 });
+    G.stroke(pts, { ink: 'rgba(232,244,255,0.98)', sw: 3.0, alpha: 205, jitter: 1.8, smooth: 1 });
+    C.restore();
+    for (let i = 0; i < TRAIL_WP.length; i++) {
+      if (i / (TRAIL_WP.length - 1) > grow + 0.02) break;
+      markAt(TRAIL_WP[i][0], TRAIL_WP[i][1], i, t, w);
+    }
+  }
+  function markAt(x, y, i, t, w) {
+    const C = G.getCtx();
+    const col = TRAIL_WP[i][2];
+    const pop = (0.78 + 0.22 * Math.sin(t * 2 + i)) * 1.55;
+    C.save(); C.translate(x, y); C.scale(pop, pop);
+    C.globalAlpha = C.globalAlpha * w;
+    G.glow(0, 0, 40, 'rgba(180,215,255,0.55)', 255);
+    G.orbit(0, 0, 13, 13, 0, col, 2.6, 235);
+    switch (i) {
+      case 0: G.stroke([[-9, 3], [0, -3], [9, 3]], { ink: col, sw: 2.4, alpha: 230 }); break;
+      case 1: G.stroke([[0, 7], [0, -7]], { ink: col, sw: 2.4, alpha: 230 }); G.stroke([[-5, -2], [0, -8], [5, -2]], { ink: col, sw: 2.2, alpha: 230 }); break;
+      case 2: for (let k = 0; k < 8; k++) { const a = k / 8 * TAU; G.dot(Math.cos(a) * 7, Math.sin(a) * 7, 1.8, '#FFFFFF', 230); } break;
+      case 3: G.paint([[-6, 6], [6, 6], [0, -7]], { fill: 'rgba(220,235,255,0.5)', ink: col, sw: 2 }); break;
+      case 4: G.dot(0, 0, 3, col, 240); for (let k = 0; k < 4; k++) { const a = k / 4 * TAU + 0.4; G.stroke([[0, 0], [Math.cos(a) * 8, Math.sin(a) * 8]], { ink: col, sw: 1.8, alpha: 190 }); } break;
+      case 5: G.stroke([[-3, -7], [-3, 7]], { ink: col, sw: 2.4, alpha: 230 }); G.stroke([[3, -7], [3, 7]], { ink: col, sw: 2.4, alpha: 230 }); break;
+      case 6: G.orbit(0, 0, 6, 6, 0, col, 2.4, 230); break;
+      case 7: for (let k = 0; k < 8; k++) { const a = k / 8 * TAU; G.paint(G.ellPts(Math.cos(a) * 7, Math.sin(a) * 7, 3.6, 1.8, 10, 0, a), { fill: col, fillOp: 235 }); } break;
+      case 8: G.paint(G.ellPts(0, 0, 6, 6, 16, 0), { fill: '#5FB6E8', ink: '#DCE8FF', sw: 1.6 }); break;
+      case 9: G.orbit(0, 0, 8, 4, 0, col, 1.8, 220); G.dot(0, 0, 2.6, '#FFE0A0', 250); break;
+      case 10: for (let k = 0; k < 3; k++) { const q = []; for (let s = 0; s <= 8; s++) { const u2 = s / 8, a = k / 3 * TAU + u2 * 2.4; q.push([Math.cos(a) * u2 * 8, Math.sin(a) * u2 * 8 * 0.6]); } G.stroke(q, { ink: col, sw: 1.6, alpha: 210 }); } break;
+      case 11: G.stroke([[-8, 0], [8, 0]], { ink: col, sw: 1.6, alpha: 190 }); G.stroke([[0, -6], [0, 6]], { ink: col, sw: 1.6, alpha: 190 }); break;
+      case 12: G.paint(G.ellPts(0, 0, 6, 6, 18, 0), { fill: '#05060E' }); G.orbit(0, 0, 8, 8, 0, '#FFC24B', 2, 240); break;
+      case 13: G.orbit(0, 0, 4, 4, 0, col, 1.6, 190); G.orbit(0, 0, 7, 7, 0, col, 1.4, 150); break;
+      default: G.paint(G.ellPts(0, 0, 6, 6, 16, 0), { fill: 'rgba(150,215,255,0.35)', ink: '#DCE8FF', sw: 1.6 }); G.stroke([[-8, 2], [8, 2]], { ink: '#DCE8FF', sw: 1.6, alpha: 220 }); break;
+    }
+    C.restore();
+  }
+
   function backProps(t) {
     const C = G.getCtx();
     // 海洋的水下层先画（在粒子后面）
     const wsea = WTS[F_SEA];
     if (wsea > 0.02) seaProps(t, wsea);
+    const wup = WTS[F_UPWELL];
+    if (wup > 0.02) upwellProps(t, wup);
+    const wbr = WTS[F_BREACH];
+    if (wbr > 0.02) breachProps(t, wbr);
+    const wlf = WTS[F_LIFTOFF];
+    if (wlf > 0.02) liftoffProps(t, wlf);
     const wfl = WTS[F_FLOWER];
     if (wfl > 0.02) {
       C.save(); C.globalAlpha = C.globalAlpha * wfl;
@@ -665,6 +913,8 @@
         G.paint(G.ellPts(x, y, r, r * 0.42, 18, 3), { fill: 'rgba(255,255,255,0.05)', ink: 'rgba(255,255,255,0.16)', sw: 2, inkOp: 200 * we });
       }
     }
+    const wtr = WTS[F_TRAIL];
+    if (wtr > 0.02) trailProps(t, wtr);
   }
 
   const CONT = [];
@@ -711,32 +961,57 @@
     C.restore();
   }
 
+  // 破水面（7.35–11.35 s）：入水蓄力 → 出水拉伸 → 空中 → 拍水落下。
+  // squash / stretch 这两个参数在此之前全片一次没用过，这一幕是它们的首秀。
+  function breachDeform(t) {
+    const u = G.seg(t, 7.35, 11.35);
+    if (u <= 0 || u >= 1) return [1, 1];
+    const sq = G.kf(u, [[0, 1], [0.11, 1.16], [0.23, 0.84], [0.39, 0.98], [0.61, 0.92], [0.78, 1.24], [0.94, 1.04], [1, 1]]);
+    const st = G.kf(u, [[0, 1], [0.11, 0.80], [0.23, 1.28], [0.39, 1.04], [0.61, 1.10], [0.78, 0.72], [0.94, 0.98], [1, 1]]);
+    return [sq, st];
+  }
+
   function whaleAt(t) {
     const K = [
       [0.0, -300, 640, 1.75, 1, 0.00, 'idle'],
       [1.8, 520, 640, 1.75, 1, 0.00, 'idle'],
       [3.0, 640, 650, 1.72, 1, -0.06, 'wow'],
-      [4.6, 900, 600, 1.30, 1, -0.42, 'wow'],
-      [6.6, 1080, 470, 1.22, 1, -0.55, 'wow'],
-      [8.0, 600, 600, 1.14, 1, -0.12, 'wow'],
-      [10.4, 1200, 600, 1.06, -1, 0.18, 'happy'],
-      [12.4, 700, 520, 1.04, 1, 0.22, 'happy'],
-      [14.6, 1240, 560, 1.00, -1, 0.10, 'happy'],
-      [16.6, 780, 500, 0.98, 1, 0.26, 'happy'],
-      [18.8, 1080, 470, 0.94, 1, 0.30, 'happy'],
-      [21.4, 1380, 560, 0.88, -1, 0.16, 'happy'],
-      [24.0, 1300, 620, 0.78, -1, 0.10, 'happy'],
-      [26.6, 640, 560, 0.70, 1, -0.20, 'wow'],
-      [29.0, 1140, 660, 0.62, -1, 0.14, 'wow'],
-      [31.6, 1220, 800, 0.54, -1, -0.10, 'wow'],
-      [34.0, 620, 720, 0.58, 1, -0.30, 'wow'],
-      [36.4, 960, 660, 0.74, 1, 0.90, 'dizzy'],
-      [38.4, 900, 660, 0.68, 1, 0.20, 'happy'],
-      [40.6, 700, 740, 0.50, 1, 0.00, 'happy'],
-      [42.4, 560, 660, 1.10, 1, 0.00, 'idle'],
-      [43.6, 620, 668, 1.16, 1, -0.05, 'wow'],
-      [44.4, 660, 660, 1.14, 1, -0.03, 'happy'],
-      [45.0, 680, 662, 1.12, 1, 0.00, 'happy'],
+      // 上浮：抬头、加速摆尾
+      [4.4, 700, 690, 1.66, 1, -0.52, 'wow'],
+      [6.2, 780, 570, 1.60, 1, -0.95, 'wow'],
+      // 破水面：入水 → 跃起 → 弧顶 → 拍水
+      [7.7, 830, 700, 1.52, 1, 0.30, 'wow'],
+      [8.2, 890, 620, 1.48, 1, -0.80, 'wow'],
+      [8.9, 950, 250, 1.40, 1, -1.18, 'wow'],
+      [9.8, 1090, 450, 1.30, 1, -0.40, 'happy'],
+      [10.5, 1180, 700, 1.24, 1, 0.24, 'happy'],
+      [12.0, 1010, 600, 1.16, -1, 0.16, 'happy'],
+      [14.6, 1240, 560, 1.06, -1, 0.10, 'happy'],
+      [16.6, 780, 500, 1.00, 1, 0.26, 'happy'],
+      [18.8, 1080, 470, 0.96, 1, 0.30, 'happy'],
+      [21.4, 1380, 560, 0.90, -1, 0.16, 'happy'],
+      [24.2, 1320, 620, 0.86, -1, 0.10, 'happy'],
+      // 离地：从地球边上离开，越游越小
+      [26.2, 900, 620, 0.92, 1, -0.20, 'wow'],
+      [27.6, 640, 600, 0.88, 1, -0.48, 'wow'],
+      [29.4, 1180, 460, 0.66, 1, -0.22, 'wow'],
+      [31.9, 1390, 620, 0.56, -1, 0.10, 'wow'],
+      [35.2, 700, 560, 0.52, 1, -0.18, 'wow'],
+      [38.7, 1160, 660, 0.48, -1, 0.14, 'wow'],
+      [41.9, 1240, 800, 0.44, -1, -0.10, 'wow'],
+      [45.4, 620, 720, 0.50, 1, -0.30, 'wow'],
+      [47.2, 900, 640, 0.72, 1, 0.80, 'dizzy'],
+      [48.7, 1000, 660, 0.74, 1, 0.18, 'happy'],
+      [51.0, 780, 740, 0.58, 1, 0.00, 'happy'],
+      // 星图：位置由航线曲线决定（见下面的 trailSample），这里只是兜底
+      [52.4, 110, 720, 0.62, 1, -0.05, 'happy'],
+      [54.9, 1500, 780, 0.56, 1, -0.06, 'wow'],
+      // 回海：掉头、加速游出画面 —— 末帧与首帧一致，所以片子可以无缝循环
+      [56.4, 700, 664, 0.90, -1, 0.00, 'happy'],
+      [57.6, 520, 656, 1.18, -1, -0.08, 'happy'],
+      [58.9, 180, 650, 1.48, -1, -0.06, 'wow'],
+      [59.9, -300, 646, 1.66, -1, 0.00, 'idle'],
+      [60.5825, -520, 644, 1.72, -1, 0.00, 'idle'],
     ];
     let a = K[0], b = K[0];
     if (t <= K[0][0]) a = b = K[0];
@@ -744,16 +1019,29 @@
     else for (let i = 1; i < K.length; i++) if (t < K[i][0]) { a = K[i - 1]; b = K[i]; break; }
     const k = a === b ? 0 : easeIO((t - a[0]) / (b[0] - a[0]));
     const bob = Math.sin(t * 2.6) * 8;
-    const splash = ((t > 1.2 && t < 3.4) || t > 43.2) ? Math.max(0, G.pulse(t, 5) - 0.4) * 1.3 : 0;
-    const hop = t > 42.9 ? -40 * Math.max(0, Math.sin((t - 42.9) / 0.9 * Math.PI)) : 0;
-    G.whale(t, lerp(a[1], b[1], k), lerp(a[2], b[2], k) + bob + hop, lerp(a[3], b[3], k), {
+    let wx = lerp(a[1], b[1], k), wy = lerp(a[2], b[2], k) + bob;
+    // 星图那一段：让它真的沿航线飞（采样同一条曲线，不是手写坐标）
+    const tw = clamp(Math.min(G.seg(t, 52.15, 52.75), 1 - G.seg(t, 55.75, 56.35)));
+    if (tw > 0.001) {
+      const s = trailSample(trailGrow(t));
+      wx = lerp(wx, s[0] + 24, tw); wy = lerp(wy, s[1] - 30, tw);
+    }
+    let spout = 0;
+    if (t > 1.2 && t < 3.4) spout = Math.max(0, G.pulse(t, 5) - 0.4) * 1.3;
+    else if (t > 8.6 && t < 9.9) spout = 0.55 * Math.sin(G.seg(t, 8.6, 9.9) * Math.PI);   // 弧顶喷一口
+    const def = breachDeform(t);
+    // 上浮段摆尾加速（用平滑斜坡，尾相位才连续；直接跳会看到尾巴瞬移）
+    const tailFast = 2.6 + 1.1 * Math.min(G.seg(t, 4.0, 4.8), 1 - G.seg(t, 7.6, 8.4));
+    G.whale(t, wx, wy, lerp(a[3], b[3], k), {
       dir: k < 0.5 ? a[4] : b[4],
       tilt: lerp(a[5], b[5], k),
       mood: k < 0.5 ? a[6] : b[6],
       blush: 130,
-      spout: splash,
-      emote: (t > 43.6 && t < 44.4) ? 'heart' : null,
-      emoteO: { pop: G.backOut(G.seg(t, 43.6, 44.1)) }
+      squash: def[0], stretch: def[1],
+      tailSpeed: tailFast,
+      spout: spout,
+      emote: (t > 56.9 && t < 57.9) ? 'heart' : null,
+      emoteO: { pop: G.backOut(G.seg(t, 56.9, 57.4)) }
     });
   }
 
@@ -787,11 +1075,12 @@
     bgAt(t);
     bgFill();
 
-    const wPaper = WTS[F_SEA] * 0.55 + WTS[F_FLOWER] * 0.25;
+    const wPaper = WTS[F_SEA] * 0.55 + WTS[F_FLOWER] * 0.25 + WTS[F_UPWELL] * 0.55;
     if (wPaper > 0.02) G.speckle(t, Math.round(110 * wPaper), P.ink, 22 * wPaper + 4);
-    if (WTS[F_GALAXY] + WTS[F_BH] + WTS[F_TUNNEL] + WTS[F_SPACETIME] + WTS[F_ORBIT] > 0.15) {
-      G.starfield(t, 300, '#DCE8FF', 180 * clamp(WTS[F_GALAXY] + WTS[F_BH] + WTS[F_TUNNEL] + WTS[F_SPACETIME] + WTS[F_ORBIT]));
-    }
+    const wDeep = WTS[F_GALAXY] + WTS[F_BH] + WTS[F_TUNNEL] + WTS[F_SPACETIME] + WTS[F_ORBIT];
+    if (wDeep > 0.15) G.starfield(t, 300, '#DCE8FF', 180 * clamp(wDeep));
+    const wDeep2 = WTS[F_LIFTOFF] + WTS[F_TRAIL] * 0.85;
+    if (wDeep2 > 0.05) G.starfield(t, 240, '#DCE8FF', 150 * clamp(wDeep2));
 
     const cam = camAt(t);
     G.camBegin(cam.cx, cam.cy, cam.zoom, cam.rot);
